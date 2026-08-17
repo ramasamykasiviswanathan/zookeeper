@@ -42,6 +42,7 @@ import org.apache.zookeeper.txn.TxnDigest;
 import org.apache.zookeeper.txn.TxnHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * This is a helper class
@@ -347,6 +348,9 @@ public class FileTxnSnapLog {
                     highestZxid = hdr.getZxid();
                 }
                 try {
+                    MDC.put("sessionId", Long.toHexString(hdr.getClientId()));
+                    MDC.put("cxid", Long.toHexString(hdr.getCxid()));
+                    MDC.put("zxid", Long.toHexString(hdr.getZxid()));
                     processTransaction(hdr, dt, sessions, itr.getTxn());
                     dt.compareDigest(hdr, itr.getTxn(), itr.getDigest());
                     txnLoaded++;
@@ -356,6 +360,11 @@ public class FileTxnSnapLog {
                                           + " error: "
                                           + e.getMessage(),
                                           e);
+                }
+                finally{
+                    MDC.remove("cxid");
+                    MDC.remove("zxid");
+                    MDC.remove("sessionId");
                 }
                 listener.onTxnLoaded(hdr, itr.getTxn(), itr.getDigest());
                 if (!itr.next()) {
