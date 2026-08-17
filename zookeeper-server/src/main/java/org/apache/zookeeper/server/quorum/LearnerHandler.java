@@ -339,8 +339,8 @@ public class LearnerHandler extends ZooKeeperThread {
                 if(p.getData() != null){
                     ByteBuffer bb1 = ByteBuffer.wrap(p.getData());
                     MDC.put("sessionId", Long.toHexString(bb1.getLong()));
-                    MDC.put("cxid", Long.toHexString(bb.getInt()));
-                    MDC.put("zxid", Long.toHexString(qp.getZxid()));
+                    MDC.put("cxid", Long.toHexString(bb1.getInt()));
+                    MDC.put("zxid", Long.toHexString(p.getZxid()));
                 }
                 ServerMetrics.getMetrics().LEARNER_HANDLER_QP_SIZE.add(Long.toString(this.sid), queuedPackets.size());
 
@@ -383,7 +383,7 @@ public class LearnerHandler extends ZooKeeperThread {
                 closeSocket();
                 break;
             }finally {
-                MDC.remove("sessionId")
+                MDC.remove("sessionId");
                 MDC.remove("zxid");
                 MDC.remove("cxid");
             }
@@ -669,7 +669,7 @@ public class LearnerHandler extends ZooKeeperThread {
                 if(qp.getData() != null){
                     ByteBuffer bb1 = ByteBuffer.wrap(qp.getData());
                     MDC.put("sessionId", Long.toHexString(bb1.getLong()));
-                    MDC.put("cxid", Long.toHexString(bb.getInt()));
+                    MDC.put("cxid", Long.toHexString(bb1.getInt()));
                     MDC.put("zxid", Long.toHexString(qp.getZxid()));
                 }
 

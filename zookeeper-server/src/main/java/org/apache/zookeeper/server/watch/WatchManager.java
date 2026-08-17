@@ -139,7 +139,7 @@ public class WatchManager implements IWatchManager {
 
     @Override
     public WatcherOrBitSet triggerWatch(String path, EventType type, long zxid, List<ACL> acl, WatcherOrBitSet supress) {
-        MDC.put("zxid", Long.toHexString(p.getZxid()));
+        MDC.put("zxid", Long.toHexString(zxid));
         WatchedEvent e = new WatchedEvent(type, KeeperState.SyncConnected, path, zxid);
         Set<Watcher> watchers = new HashSet<>();
         synchronized (this) {

@@ -83,7 +83,7 @@ import org.apache.zookeeper.txn.TxnDigest;
 import org.apache.zookeeper.txn.TxnHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC
+import org.slf4j.MDC;
 
 /**
  * This request processor is generally at the start of a RequestProcessor
