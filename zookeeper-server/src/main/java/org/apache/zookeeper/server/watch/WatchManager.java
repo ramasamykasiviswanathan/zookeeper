@@ -38,6 +38,7 @@ import org.apache.zookeeper.server.ServerWatcher;
 import org.apache.zookeeper.server.ZooTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * This class manages watches. It allows watches to be associated with a string
@@ -138,6 +139,7 @@ public class WatchManager implements IWatchManager {
 
     @Override
     public WatcherOrBitSet triggerWatch(String path, EventType type, long zxid, List<ACL> acl, WatcherOrBitSet supress) {
+        MDC.put("zxid", Long.toHexString(zxid));
         WatchedEvent e = new WatchedEvent(type, KeeperState.SyncConnected, path, zxid);
         Set<Watcher> watchers = new HashSet<>();
         synchronized (this) {
@@ -212,7 +214,7 @@ public class WatchManager implements IWatchManager {
                 // Other types not logged.
                 break;
         }
-
+        MDC.remove("zxid");
         return new WatcherOrBitSet(watchers);
     }
 

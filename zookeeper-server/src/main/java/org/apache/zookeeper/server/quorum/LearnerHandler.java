@@ -57,6 +57,7 @@ import org.apache.zookeeper.server.util.MessageTracker;
 import org.apache.zookeeper.server.util.ZxidUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * There will be an instance of this class created by the Leader for each
@@ -335,7 +336,12 @@ public class LearnerHandler extends ZooKeeperThread {
                     bufferedOutput.flush();
                     p = queuedPackets.take();
                 }
-
+                if(p.getData() != null){
+                    ByteBuffer bb1 = ByteBuffer.wrap(p.getData());
+                    MDC.put("sessionId", Long.toHexString(bb1.getLong()));
+                    MDC.put("cxid", Long.toHexString(bb1.getInt()));
+                    MDC.put("zxid", Long.toHexString(p.getZxid()));
+                }
                 ServerMetrics.getMetrics().LEARNER_HANDLER_QP_SIZE.add(Long.toString(this.sid), queuedPackets.size());
 
                 if (p instanceof MarkerQuorumPacket) {
@@ -376,6 +382,10 @@ public class LearnerHandler extends ZooKeeperThread {
                 // the learner/observer instantaneously
                 closeSocket();
                 break;
+            }finally {
+                MDC.remove("sessionId");
+                MDC.remove("zxid");
+                MDC.remove("cxid");
             }
         }
     }
@@ -656,6 +666,12 @@ public class LearnerHandler extends ZooKeeperThread {
                 qp = new QuorumPacket();
                 ia.readRecord(qp, "packet");
                 messageTracker.trackReceived(qp.getType());
+                if(qp.getData() != null){
+                    ByteBuffer bb1 = ByteBuffer.wrap(qp.getData());
+                    MDC.put("sessionId", Long.toHexString(bb1.getLong()));
+                    MDC.put("cxid", Long.toHexString(bb1.getInt()));
+                    MDC.put("zxid", Long.toHexString(qp.getZxid()));
+                }
 
                 if (LOG.isTraceEnabled()) {
                     long traceMask = ZooTrace.SERVER_PACKET_TRACE_MASK;
@@ -715,6 +731,9 @@ public class LearnerHandler extends ZooKeeperThread {
                     LOG.warn("unexpected quorum packet, type: {}", packetToString(qp));
                     break;
                 }
+                MDC.remove("cxid");
+                MDC.remove("zxid");
+                MDC.remove("sessionId");
             }
         } catch (IOException e) {
             LOG.error("Unexpected exception in LearnerHandler: ", e);
@@ -728,6 +747,9 @@ public class LearnerHandler extends ZooKeeperThread {
             LOG.error("Unexpected exception in LearnerHandler.", e);
             throw e;
         } finally {
+            MDC.remove("cxid");
+            MDC.remove("zxid");
+            MDC.remove("sessionId");
             if (syncThrottler != null) {
                 syncThrottler.endSync();
                 syncThrottler = null;

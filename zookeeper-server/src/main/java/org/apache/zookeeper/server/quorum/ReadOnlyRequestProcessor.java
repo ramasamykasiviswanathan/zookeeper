@@ -30,6 +30,7 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.ZooTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * This processor is at the beginning of the ReadOnlyZooKeeperServer's
@@ -59,7 +60,9 @@ public class ReadOnlyRequestProcessor extends ZooKeeperCriticalThread implements
         try {
             while (!finished) {
                 Request request = queuedRequests.take();
-
+                MDC.put("sessionId", Long.toHexString(request.sessionId));
+                MDC.put("cxid", Long.toHexString(request.cxid));
+                MDC.put("zxid", Long.toHexString(request.zxid));
                 // log request
                 if (LOG.isTraceEnabled()) {
                     long traceMask = ZooTrace.CLIENT_REQUEST_TRACE_MASK;
@@ -100,9 +103,17 @@ public class ReadOnlyRequestProcessor extends ZooKeeperCriticalThread implements
                 if (nextProcessor != null) {
                     nextProcessor.processRequest(request);
                 }
+                MDC.remove("cxid");
+                MDC.remove("zxid");
+                MDC.remove("sessionId");
             }
         } catch (Exception e) {
             handleException(this.getName(), e);
+        }
+        finally{
+            MDC.remove("cxid");
+            MDC.remove("zxid");
+            MDC.remove("sessionId");
         }
         LOG.info("ReadOnlyRequestProcessor exited loop!");
     }

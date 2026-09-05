@@ -83,6 +83,7 @@ import org.apache.zookeeper.txn.TxnDigest;
 import org.apache.zookeeper.txn.TxnHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * This request processor is generally at the start of a RequestProcessor
@@ -140,6 +141,9 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
             while (true) {
                 ServerMetrics.getMetrics().PREP_PROCESSOR_QUEUE_SIZE.add(submittedRequests.size());
                 Request request = submittedRequests.take();
+                MDC.put("sessionId", Long.toHexString(request.sessionId));
+                MDC.put("cxid", Long.toHexString(request.cxid));
+                MDC.put("zxid", Long.toHexString(request.zxid));
                 ServerMetrics.getMetrics().PREP_PROCESSOR_QUEUE_TIME
                     .add(Time.currentElapsedTime() - request.prepQueueStartTime);
                 if (LOG.isTraceEnabled()) {
@@ -155,9 +159,16 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
 
                 request.prepStartTime = Time.currentElapsedTime();
                 pRequest(request);
+                MDC.remove("cxid");
+                MDC.remove("zxid");
+                MDC.remove("sessionId");
             }
         } catch (Exception e) {
             handleException(this.getName(), e);
+        } finally {
+            MDC.remove("cxid");
+            MDC.remove("zxid");
+            MDC.remove("sessionId");
         }
         LOG.info("PrepRequestProcessor exited loop!");
     }

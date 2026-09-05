@@ -30,6 +30,7 @@ import org.apache.zookeeper.server.ZooTrace;
 import org.apache.zookeeper.txn.ErrorTxn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * This RequestProcessor forwards any requests that modify the state of the
@@ -67,6 +68,9 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
                 ServerMetrics.getMetrics().LEARNER_REQUEST_PROCESSOR_QUEUE_SIZE.add(queuedRequests.size());
 
                 Request request = queuedRequests.take();
+                MDC.put("sessionId", Long.toHexString(request.sessionId));
+                MDC.put("cxid", Long.toHexString(request.cxid));
+                MDC.put("zxid", Long.toHexString(request.zxid));
                 if (LOG.isTraceEnabled()) {
                     ZooTrace.logRequest(LOG, ZooTrace.CLIENT_REQUEST_TRACE_MASK, 'F', request, "");
                 }
@@ -119,11 +123,19 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
                     }
                     break;
                 }
+                MDC.remove("cxid");
+                MDC.remove("zxid");
+                MDC.remove("sessionId");
             }
         } catch (RuntimeException e) { // spotbugs require explicit catch of RuntimeException
             handleException(this.getName(), e);
         } catch (Exception e) {
             handleException(this.getName(), e);
+        }
+        finally{
+            MDC.remove("cxid");
+            MDC.remove("zxid");
+            MDC.remove("sessionId");
         }
         LOG.info("FollowerRequestProcessor exited loop!");
     }
