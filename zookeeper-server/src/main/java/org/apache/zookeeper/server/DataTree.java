@@ -34,6 +34,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.jute.InputArchive;
 import org.apache.jute.OutputArchive;
 import org.apache.jute.Record;
@@ -495,6 +496,13 @@ public class DataTree {
             if (outputStat != null) {
                 child.copyStat(outputStat);
             }
+            // Log node creation
+            if (LOG.isTraceEnabled()) {
+                ZooTrace.logTraceMessage(
+                    LOG,
+                    ZooTrace.EVENT_DELIVERY_TRACE_MASK,
+                    "DataTree.createNode path=" + path);
+            }
         }
         // now check if its one of the zookeeper node child
         if (parentName.startsWith(quotaZookeeper)) {
@@ -566,6 +574,14 @@ public class DataTree {
             nodeDataSize.addAndGet(-getNodeSize(path, node.data));
         }
 
+        // Log node deletion
+        if (LOG.isTraceEnabled()) {
+            ZooTrace.logTraceMessage(
+                LOG,
+                ZooTrace.EVENT_DELIVERY_TRACE_MASK,
+                "DataTree.deleteNode path=" + path);
+        }
+
         // Synchronized to sync the containers and ttls change, probably
         // only need to sync on containers and ttls, will update it in a
         // separate patch.
@@ -616,6 +632,14 @@ public class DataTree {
                 LOG,
                 ZooTrace.EVENT_DELIVERY_TRACE_MASK,
                 "childWatches.triggerWatch " + parentName);
+        }
+
+        // Log data modification
+        if (LOG.isTraceEnabled()) {
+            ZooTrace.logTraceMessage(
+                LOG,
+                ZooTrace.EVENT_DELIVERY_TRACE_MASK,
+                "DataTree.setData path=" + path);
         }
 
         WatcherOrBitSet processed = dataWatches.triggerWatch(path, EventType.NodeDeleted, zxid, acl);

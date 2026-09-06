@@ -18,13 +18,14 @@
 
 package org.apache.zookeeper.server;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.IOException;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+
 import org.apache.jute.Record;
 import org.apache.zookeeper.ClientCnxn;
 import org.apache.zookeeper.KeeperException;
@@ -153,10 +154,17 @@ public class FinalRequestProcessor implements RequestProcessor {
             }
             ZooTrace.logRequest(LOG, traceMask, 'E', request, "");
         }
+        // Set parent trace ID to chain from PrepRequestProcessor BEFORE phase
+        request.setParentTraceId(request.getTraceId());
+        request.logOpCodeDetails("BEFORE");
         ProcessTxnResult rc = null;
         if (!request.isThrottled()) {
           rc = applyRequest(request);
         }
+        // For AFTER: parentId chains to the BEFORE that just completed
+        // Since BEFORE and AFTER share the same traceId, use negative to indicate same request
+        request.setParentTraceId(-request.getTraceId());
+        request.logOpCodeDetails("AFTER");
         if (request.cnxn == null) {
             return;
         }

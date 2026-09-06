@@ -154,7 +154,12 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
                 }
 
                 request.prepStartTime = Time.currentElapsedTime();
+                request.logOpCodeDetails("BEFORE");
                 pRequest(request);
+                // For AFTER: parentId chains to the BEFORE that just completed
+                // Since BEFORE and AFTER share the same traceId, use negative to indicate same request
+                request.setParentTraceId(-request.getTraceId());
+                request.logOpCodeDetails("AFTER");
             }
         } catch (Exception e) {
             handleException(this.getName(), e);

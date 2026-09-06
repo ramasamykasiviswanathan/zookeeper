@@ -23,7 +23,7 @@
   <!-- Uncomment this if you would like to expose Logback JMX beans -->
   <!--jmxConfigurator /-->
 
-  <property name="zookeeper.console.threshold" value="INFO" />
+  <property name="zookeeper.console.threshold" value="TRACE" />
 
   <property name="zookeeper.log.dir" value="." />
   <property name="zookeeper.log.file" value="zookeeper.log" />
@@ -37,7 +37,8 @@
   -->
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L] - %m%n</pattern>
+      <!-- <pattern>%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L] - %m%n</pattern> -->
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [myid:%X{myid}] %-5level [thread=%thread] [%C{1}.%M:%L] %logger{36} - %msg%n</pattern>
     </encoder>
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
       <level>${zookeeper.console.threshold}</level>
