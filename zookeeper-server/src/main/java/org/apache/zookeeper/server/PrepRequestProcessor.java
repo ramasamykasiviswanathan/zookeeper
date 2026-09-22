@@ -158,7 +158,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
                 pRequest(request);
                 // For AFTER: parentId chains to the BEFORE that just completed
                 // Since BEFORE and AFTER share the same traceId, use negative to indicate same request
-                request.setParentTraceId(-request.getTraceId());
+                request.setParentTraceId(request.getTraceId());
                 request.logOpCodeDetails("AFTER");
             }
         } catch (Exception e) {

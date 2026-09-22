@@ -18,7 +18,6 @@
 
 package org.apache.zookeeper.server.quorum;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,6 +30,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,7 +52,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
 import javax.security.sasl.SaslException;
+
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.OpCode;
 import org.apache.zookeeper.common.Time;
@@ -1090,6 +1092,7 @@ public class Leader extends LearnerMaster {
         }
 
         p.addAck(sid);
+        LOG.trace("Quorum_TRACE event=ack zxid=0x{} sid={} ackAdded=true", Long.toHexString(zxid), sid);
 
         boolean hasCommitted = tryToCommit(p, zxid, followerAddr);
 
@@ -1214,6 +1217,7 @@ public class Leader extends LearnerMaster {
             lastCommitted = zxid;
         }
         QuorumPacket qp = new QuorumPacket(Leader.COMMIT, zxid, null, null);
+        LOG.trace("Quorum_TRACE event=commit zxid=0x{} commitSent=true", Long.toHexString(zxid));
         sendPacket(qp);
         ServerMetrics.getMetrics().COMMIT_COUNT.add(1);
     }
@@ -1236,6 +1240,7 @@ public class Leader extends LearnerMaster {
      * Create an inform packet and send it to all observers.
      */
     public void inform(Proposal proposal) {
+        LOG.trace("Quorum_TRACE event=inform zxid=0x{} observerInform=true",Long.toHexString(proposal.request.zxid));
         QuorumPacket qp = new QuorumPacket(Leader.INFORM, proposal.request.zxid, proposal.packet.getData(), null);
         sendObserverPacket(qp);
     }
@@ -1318,6 +1323,7 @@ public class Leader extends LearnerMaster {
             }
 
             LOG.debug("Proposing:: {}", request);
+                LOG.trace("Quorum_TRACE event=proposal zxid=0x{} opcode={} sid={} proposalCreated=true",Long.toHexString(request.zxid),(request.getHdr() != null ? request.getHdr().getType() : -1),self.getMyId());
 
             lastProposed = p.packet.getZxid();
             outstandingProposals.put(lastProposed, p);

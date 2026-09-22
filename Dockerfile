@@ -19,8 +19,11 @@ RUN mkdir -p "$ZOO_HOME" "$ZOO_DATA_DIR" "$ZOO_LOG_DIR" && tar -xzf /tmp/zookeep
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Client, Follower, and Leader Election ports
-EXPOSE 2181 2888 3888
+# Client, Follower, and Leader Election ports, and debug port
+EXPOSE 2181 2888 3888 5005
+
+# Enable Java Debug Wire Protocol (JDWP)
+ENV SERVER_JVMFLAGS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["zkServer.sh", "start-foreground"]

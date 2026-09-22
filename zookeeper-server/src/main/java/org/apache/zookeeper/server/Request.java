@@ -21,6 +21,7 @@ package org.apache.zookeeper.server;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -48,18 +49,14 @@ import org.slf4j.LoggerFactory;
 public class Request {
     private static final Logger LOG = LoggerFactory.getLogger(Request.class);
 
-    // Unique ID generator for requests without proper identification.
-    // Starts at 0; the first issued trace ID is 1 (incrementAndGet).
+    // Unique ID generator for requests without proper identification (deprecated; UUID used instead)
     private static final java.util.concurrent.atomic.AtomicLong traceIdGenerator = new java.util.concurrent.atomic.AtomicLong(0);
 
-    // Trace ID to chain BEFORE/AFTER logs for the same request
-    private final long traceId;
+    // Trace ID to chain BEFORE/AFTER logs for the same request (UUID for span visualization)
+    private final String traceId;
 
     // Timestamp when processing started (BEFORE phase)
     private long processingStartTime = -1;
-
-    // Instruction count at start of processing
-    private long startInstructionCount = -1;
 
     /**
      * Get clientId from request - uses sessionId for client identification
@@ -69,41 +66,33 @@ public class Request {
     }
 
     /**
-     * Get instruction set count - using Runtime memory stats as proxy
+     * Generate a unique UUID for tracing
      */
-    public static long getInstructionCount() {
-        Runtime runtime = Runtime.getRuntime();
-        return runtime.totalMemory() - runtime.freeMemory();
+    public static String generateUniqueId() {
+        return java.util.UUID.randomUUID().toString();
     }
 
-    /**
-     * Generate a unique ID for requests without proper session/client ID
-     */
-    public static long generateUniqueId() {
-        return traceIdGenerator.incrementAndGet();
-    }
-
-    // Parent trace ID for chaining related requests
-    private long parentTraceId = -1;
+    // Parent trace ID for chaining related requests (UUID for span visualization)
+    private String parentTraceId = null;
 
     /**
      * Set the parent trace ID for chaining related requests
      */
-    public void setParentTraceId(long parentTraceId) {
+    public void setParentTraceId(String parentTraceId) {
         this.parentTraceId = parentTraceId;
     }
 
     /**
      * Get the parent trace ID for chaining related requests
      */
-    public long getParentTraceId() {
+    public String getParentTraceId() {
         return parentTraceId;
     }
 
     /**
      * Get the trace ID for this request
      */
-    public long getTraceId() {
+    public String getTraceId() {
         return traceId;
     }
 
@@ -188,8 +177,8 @@ public class Request {
         StackTraceElement[] entryStack = captureEntryStack();
 
         long threadId = Thread.currentThread().getId();
-        long selfId = traceId;
-        long parentId = parentTraceId;
+        String selfIdStr = (traceId != null) ? traceId : "null";
+        String parentIdStr = (parentTraceId != null) ? parentTraceId : "null";
         long clientId = getClientId();
         int cxidVal = this.cxid;
         long zxidVal = (hdr != null) ? hdr.getZxid() : -1;
@@ -200,21 +189,19 @@ public class Request {
         String hostName = getHostName();
 
         // Generate IDs if not available - use traceId for chaining
-        long effectiveClientId = (clientId != 0) ? clientId : -traceId;
-        long effectiveCxid = (cxidVal != 0) ? cxidVal : (int)(-traceId);
-        long effectiveZxid = (zxidVal != -1) ? zxidVal : -traceId;
-        long effectiveSessionId = (sessionIdVal != 0) ? sessionIdVal : -traceId;
+        long effectiveClientId = (clientId != 0) ? clientId : -1;
+        int effectiveCxid = (cxidVal != 0) ? cxidVal : -1;
+        long effectiveZxid = (zxidVal != -1) ? zxidVal : -1;
+        long effectiveSessionId = (sessionIdVal != 0) ? sessionIdVal : -1;
 
         if ("BEFORE".equals(phase)) {
             this.processingStartTime = System.currentTimeMillis();
-            this.startInstructionCount = instrCount;
             LOG.info("ZK_OPCODE_LOG threadId={} selfId={} parentId={} opcode={} phase={} clientId={} cxid={} zxid={} sessionID={} instr={} time={} callerInfo={} host={} duration=0",
-                    threadId, selfId, parentId, opCodeName, phase, effectiveClientId, effectiveCxid, effectiveZxid, effectiveSessionId, instrCount, processingStartTime, callerInfo, hostName);
+                    threadId, selfIdStr, parentIdStr, opCodeName, phase, effectiveClientId, effectiveCxid, effectiveZxid, effectiveSessionId, instrCount, processingStartTime, callerInfo, hostName);
         } else {
             long duration = (processingStartTime > 0) ? (System.currentTimeMillis() - processingStartTime) : -1;
-            long instrDelta = (startInstructionCount > 0) ? (instrCount - startInstructionCount) : -1;
-            LOG.info("ZK_OPCODE_LOG threadId={} selfId={} parentId={} opcode={} phase={} clientId={} cxid={} zxid={} sessionID={} instr={} time={} callerInfo={} host={} duration={} instrDelta={}",
-                    threadId, selfId, parentId, opCodeName, phase, effectiveClientId, effectiveCxid, effectiveZxid, effectiveSessionId, instrCount, System.currentTimeMillis(), callerInfo, hostName, duration, instrDelta);
+            LOG.info("ZK_OPCODE_LOG threadId={} selfId={} parentId={} opcode={} phase={} clientId={} cxid={} zxid={} sessionID={} instr={} time={} callerInfo={} host={} duration={}",
+                    threadId, selfIdStr, parentIdStr, opCodeName, phase, effectiveClientId, effectiveCxid, effectiveZxid, effectiveSessionId, instrCount, System.currentTimeMillis(), callerInfo, hostName, duration);
         }
     }
 
@@ -229,7 +216,7 @@ public class Request {
     private static volatile boolean staleLatencyCheck = Boolean.parseBoolean(System.getProperty("zookeeper.request_stale_latency_check", "false"));
 
     public Request(ServerCnxn cnxn, long sessionId, int xid, int type, RequestRecord request, List<Id> authInfo) {
-        this.traceId = traceIdGenerator.incrementAndGet();
+        this.traceId = java.util.UUID.randomUUID().toString();
         this.cnxn = cnxn;
         this.sessionId = sessionId;
         this.cxid = xid;
@@ -239,7 +226,7 @@ public class Request {
     }
 
     public Request(long sessionId, int xid, int type, TxnHeader hdr, Record txn, long zxid) {
-        this.traceId = traceIdGenerator.incrementAndGet();
+        this.traceId = java.util.UUID.randomUUID().toString();
         this.sessionId = sessionId;
         this.cxid = xid;
         this.type = type;
@@ -252,7 +239,7 @@ public class Request {
     }
 
     public Request(TxnHeader hdr, Record txn, TxnDigest digest) {
-        this.traceId = traceIdGenerator.incrementAndGet();
+        this.traceId = java.util.UUID.randomUUID().toString();
         this.sessionId = hdr.getClientId();
         this.cxid = hdr.getCxid();
         this.type = hdr.getType();
@@ -731,5 +718,13 @@ public class Request {
 
     public boolean isFromLearner() {
         return owner instanceof LearnerHandler;
+    }
+
+    /**
+     * Get CPU instruction/time count using ThreadMXBean (actual CPU time in ns)
+     */
+    public static long getInstructionCount() {
+        java.lang.management.ThreadMXBean bean = java.lang.management.ManagementFactory.getThreadMXBean();
+        return bean.isCurrentThreadCpuTimeSupported() ? bean.getCurrentThreadCpuTime() : -1;
     }
 }

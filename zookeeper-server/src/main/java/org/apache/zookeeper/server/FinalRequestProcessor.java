@@ -163,7 +163,7 @@ public class FinalRequestProcessor implements RequestProcessor {
         }
         // For AFTER: parentId chains to the BEFORE that just completed
         // Since BEFORE and AFTER share the same traceId, use negative to indicate same request
-        request.setParentTraceId(-request.getTraceId());
+        request.setParentTraceId(request.getTraceId());
         request.logOpCodeDetails("AFTER");
         if (request.cnxn == null) {
             return;

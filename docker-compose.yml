@@ -9,9 +9,11 @@ services:
     hostname: zoo1
     ports:
       - "2181:2181"
+      - "5005:5005"
     environment:
       ZOO_MY_ID: 1
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     volumes:
       - zoo1_data:/data
       - zoo1_datalog:/logs
@@ -24,9 +26,11 @@ services:
     hostname: zoo2
     ports:
       - "2182:2181"
+      - "5006:5005"
     environment:
       ZOO_MY_ID: 2
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     volumes:
       - zoo2_data:/data
       - zoo2_datalog:/logs
@@ -39,9 +43,11 @@ services:
     hostname: zoo3
     ports:
       - "2183:2181"
+      - "5007:5005"
     environment:
       ZOO_MY_ID: 3
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     volumes:
       - zoo3_data:/data
       - zoo3_datalog:/logs
