@@ -200,6 +200,9 @@ public class NettyServerCnxn extends ServerCnxn {
     @Override
     public int sendResponse(ReplyHeader h, Record r, String tag,
                              String cacheKey, Stat stat, int opCode) throws IOException {
+        if (h != null) {
+            LOG.info("!!!ZK_OPCODE_LOG!!! | EGRESS | NettyServerCnxn.sendResponse | sessionId={}/0x{} | cxid={} | zxid={}/0x{} | RESPONSE | ERR={} | thread={} | remoteAddr={}", getSessionId(), Long.toHexString(getSessionId()), h.getXid(), h.getZxid(), Long.toHexString(h.getZxid()), h.getErr(), Thread.currentThread().getName(), channel.remoteAddress());
+        }
         // cacheKey and stat are used in caching, which is not
         // implemented here. Implementation example can be found in NIOServerCnxn.
         if (closingChannel || !channel.isOpen()) {

@@ -1047,6 +1047,7 @@ public class Leader extends LearnerMaster {
      */
     @Override
     public synchronized void processAck(long sid, long zxid, SocketAddress followerAddr) {
+        LOG.info("!!!ZK_OPCODE_LOG!!! | QUORUM_RX_ACK | Leader.processAck | zxid={}/0x{} | sid={} | thread={} | followerAddr={}", zxid, Long.toHexString(zxid), sid, Thread.currentThread().getName(), followerAddr);
         if (!allowedToCommit) {
             return; // last op committed was a leader change - from now on
         }
@@ -1291,6 +1292,7 @@ public class Leader extends LearnerMaster {
      * @return the proposal that is queued to send to all the members
      */
     public Proposal propose(Request request) throws XidRolloverException {
+        request.trackGraph("QUORUM_TX_PROPOSE", "Leader.propose");
         if (request.isThrottled()) {
             LOG.error("Throttled request send as proposal: {}. Exiting.", request);
             ServiceUtils.requestSystemExit(ExitCode.UNEXPECTED_ERROR.getValue());

@@ -1206,6 +1206,9 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
     }
 
     public void submitRequest(Request si) {
+        if (si != null) {
+           si.trackGraph("INGRESS", "ZooKeeperServer.submitRequest");
+        }
         if (restoreLatch != null) {
             try {
                 LOG.info("Blocking request submission while restore is in progress");

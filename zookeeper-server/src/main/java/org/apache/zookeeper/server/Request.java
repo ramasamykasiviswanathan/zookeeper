@@ -21,7 +21,6 @@ package org.apache.zookeeper.server;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -203,6 +202,17 @@ public class Request {
             LOG.info("ZK_OPCODE_LOG threadId={} selfId={} parentId={} opcode={} phase={} clientId={} cxid={} zxid={} sessionID={} instr={} time={} callerInfo={} host={} duration={}",
                     threadId, selfIdStr, parentIdStr, opCodeName, phase, effectiveClientId, effectiveCxid, effectiveZxid, effectiveSessionId, instrCount, System.currentTimeMillis(), callerInfo, hostName, duration);
         }
+    }
+
+    /**
+     * Emits a standardized log entry for building execution graphs.
+     * 
+     * @param phase Lifecycle phase name
+     * @param method Class and method name
+     */
+    public void trackGraph(String phase, String method) {
+            // LOG.info("!!!ZK_OPCODE_LOG!!! | {} | {} | 0x{} | {} | 0x{} | {}", phase, method, Long.toHexString(this.sessionId), this.cxid, Long.toHexString(this.zxid), Request.op2String(this.type));
+            LOG.info("!!!ZK_OPCODE_LOG!!! | phase={} | method={} | sessionId={}/0x{} | cxid={} | zxid={}/0x{} | opcode={} | thread={} | traceId={}", phase, method, this.sessionId, Long.toHexString(this.sessionId), this.cxid, this.zxid, Long.toHexString(this.zxid), Request.op2String(this.type), Thread.currentThread().getName(), this.traceId);
     }
 
     public static final Request requestOfDeath = new Request(null, 0, 0, 0, null, null);

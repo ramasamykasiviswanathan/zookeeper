@@ -753,6 +753,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
      * @param request
      */
     protected void pRequest(Request request) throws RequestProcessorException {
+        request.trackGraph("PROCESS_PREP", "PrepRequestProcessor.pRequest");
         request.setHdr(null);
         request.setTxn(null);
 

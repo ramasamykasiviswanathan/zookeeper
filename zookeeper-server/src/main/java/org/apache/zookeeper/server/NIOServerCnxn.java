@@ -18,7 +18,6 @@
 
 package org.apache.zookeeper.server;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -29,11 +28,13 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.jute.BinaryInputArchive;
 import org.apache.jute.Record;
 import org.apache.zookeeper.ClientCnxn;
@@ -688,6 +689,9 @@ public class NIOServerCnxn extends ServerCnxn {
 
     @Override
     public int sendResponse(ReplyHeader h, Record r, String tag, String cacheKey, Stat stat, int opCode) {
+        if (h != null) {
+            LOG.info("!!!ZK_OPCODE_LOG!!! | EGRESS | NIOServerCnxn.sendResponse | sessionId={}/0x{} | cxid={} | zxid={}/0x{} | RESPONSE | ERR={} | thread={} | remoteAddr={}", getSessionId(), Long.toHexString(getSessionId()), h.getXid(), h.getZxid(), Long.toHexString(h.getZxid()), h.getErr(), Thread.currentThread().getName(), sock.socket().getRemoteSocketAddress());
+        }
         int responseSize = 0;
         try {
             ByteBuffer[] bb = serialize(h, r, tag, cacheKey, stat, opCode);

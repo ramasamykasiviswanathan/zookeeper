@@ -380,7 +380,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements RequestP
 
                         // Process the write inline.
 
-                        LOG.trace("Quorum TRACE event=commitProcessorWrite zxid=0x{} sessionId={} writeProcessed=true",
+                        LOG.trace("Quorum_TRACE event=commitProcessorWrite zxid=0x{} sessionId={} writeProcessed=true",
                                 Long.toHexString(request.zxid), request.sessionId);
                         processWrite(request);
 
@@ -605,6 +605,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements RequestP
 
     @Override
     public void processRequest(Request request) {
+        request.trackGraph("PROCESS_COMMIT_WAIT", "CommitProcessor.processRequest");
         if (stopped) {
             return;
         }

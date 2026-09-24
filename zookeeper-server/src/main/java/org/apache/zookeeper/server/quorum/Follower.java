@@ -159,6 +159,7 @@ public class Follower extends Learner {
             ping(qp);
             break;
         case Leader.PROPOSAL:
+            LOG.info("!!!ZK_OPCODE_LOG!!! | QUORUM_RX_PROPOSE | Follower.processPacket | zxid={}/0x{} | type=PROPOSAL | thread={}", qp.getZxid(), Long.toHexString(qp.getZxid()), Thread.currentThread().getName());
             ServerMetrics.getMetrics().LEARNER_PROPOSAL_RECEIVED_COUNT.add(1);
             TxnLogEntry logEntry = SerializeUtils.deserializeTxn(qp.getData());
             TxnHeader hdr = logEntry.getHeader();
@@ -197,6 +198,7 @@ public class Follower extends Learner {
             }
             break;
         case Leader.COMMIT:
+            LOG.info("!!!ZK_OPCODE_LOG!!! | QUORUM_RX_COMMIT | Follower.processPacket | zxid={}/0x{} | type=COMMIT | thread={}", qp.getZxid(), Long.toHexString(qp.getZxid()), Thread.currentThread().getName());
             ServerMetrics.getMetrics().LEARNER_COMMIT_RECEIVED_COUNT.add(1);
             fzk.commit(qp.getZxid());
             if (om != null) {

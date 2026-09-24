@@ -28,6 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.zookeeper.common.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -271,6 +272,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
     }
 
     public void processRequest(final Request request) {
+        request.trackGraph("PROCESS_SYNC", "SyncRequestProcessor.processRequest");
         Objects.requireNonNull(request, "Request cannot be null");
 
         request.syncQueueStartTime = Time.currentElapsedTime();

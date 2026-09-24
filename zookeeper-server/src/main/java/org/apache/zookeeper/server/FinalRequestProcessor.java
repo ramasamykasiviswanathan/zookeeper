@@ -145,6 +145,7 @@ public class FinalRequestProcessor implements RequestProcessor {
     }
 
     public void processRequest(Request request) {
+        request.trackGraph("PROCESS_APPLY", "FinalRequestProcessor.processRequest");
         LOG.debug("Processing request:: {}", request);
 
         if (LOG.isTraceEnabled()) {
