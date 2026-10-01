@@ -20,8 +20,10 @@ package org.apache.zookeeper.server.quorum;
 
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
+
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.OpCode;
+import org.apache.zookeeper.server.DelayInjector;
 import org.apache.zookeeper.server.Request;
 import org.apache.zookeeper.server.RequestProcessor;
 import org.apache.zookeeper.server.ServerMetrics;
@@ -133,6 +135,7 @@ public class ObserverRequestProcessor extends ZooKeeperCriticalThread implements
      * Simply queue the request, which will be processed in FIFO order.
      */
     public void processRequest(Request request) {
+        DelayInjector.inject("OBSERVER", System.getProperty("zookeeper.test.delayStages", ""));
         if (!finished) {
             Request upgradeRequest = null;
             try {

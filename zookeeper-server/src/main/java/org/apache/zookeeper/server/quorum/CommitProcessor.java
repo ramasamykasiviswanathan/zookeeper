@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.zookeeper.ZooDefs.OpCode;
 import org.apache.zookeeper.common.Time;
+import org.apache.zookeeper.server.DelayInjector;
 import org.apache.zookeeper.server.ExitCode;
 import org.apache.zookeeper.server.Request;
 import org.apache.zookeeper.server.RequestProcessor;
@@ -593,6 +594,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements RequestP
     }
 
     public void commit(Request request) {
+        DelayInjector.inject("COMMIT", System.getProperty("zookeeper.test.delayStages", ""));
         if (stopped || request == null) {
             return;
         }
@@ -605,21 +607,28 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements RequestP
 
     @Override
     public void processRequest(Request request) {
-        request.trackGraph("PROCESS_COMMIT_WAIT", "CommitProcessor.processRequest");
-        if (stopped) {
-            return;
+        DelayInjector.inject("COMMIT", System.getProperty("zookeeper.test.delayStages", ""));
+        // 1. Mark START and get the baseline instruction time
+        long startCpuTime = request.logDagMethodStart("CommitProcessor.processRequest(enqueue)");
+        try {
+            if (stopped) {
+                return;
+            }
+            LOG.debug("Processing request:: {}", request);
+            request.commitProcQueueStartTime = Time.currentElapsedTime();
+            queuedRequests.add(request);
+            // If the request will block, add it to the queue of blocking requests
+            if (needCommit(request)) {
+                queuedWriteRequests.add(request);
+                numWriteQueuedRequests.incrementAndGet();
+            } else {
+                numReadQueuedRequests.incrementAndGet();
+            }
+            wakeup();
+         } finally {
+            // 2. Mark END and calculate the instruction cost delta
+            request.logDagMethodEnd("CommitProcessor.processRequest(enqueue)", startCpuTime);
         }
-        LOG.debug("Processing request:: {}", request);
-        request.commitProcQueueStartTime = Time.currentElapsedTime();
-        queuedRequests.add(request);
-        // If the request will block, add it to the queue of blocking requests
-        if (needCommit(request)) {
-            queuedWriteRequests.add(request);
-            numWriteQueuedRequests.incrementAndGet();
-        } else {
-            numReadQueuedRequests.incrementAndGet();
-        }
-        wakeup();
     }
 
     private void halt() {

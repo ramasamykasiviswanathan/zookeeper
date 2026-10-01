@@ -46,6 +46,14 @@ import org.slf4j.LoggerFactory;
  * onto the request as it is processed.
  */
 public class Request {
+    private static final java.lang.management.ThreadMXBean threadBean = java.lang.management.ManagementFactory.getThreadMXBean();
+    // CHANGED: Use AtomicInteger for safe visibility when the Request hops between threads
+    private final java.util.concurrent.atomic.AtomicInteger dagSequenceId = new java.util.concurrent.atomic.AtomicInteger(0);
+    static {
+        if (threadBean.isThreadCpuTimeSupported()) {
+            threadBean.setThreadCpuTimeEnabled(true);
+        }
+    }
     private static final Logger LOG = LoggerFactory.getLogger(Request.class);
 
     // Unique ID generator for requests without proper identification (deprecated; UUID used instead)
@@ -204,15 +212,27 @@ public class Request {
         }
     }
 
-    /**
-     * Emits a standardized log entry for building execution graphs.
-     * 
-     * @param phase Lifecycle phase name
-     * @param method Class and method name
-     */
-    public void trackGraph(String phase, String method) {
-            // LOG.info("!!!ZK_OPCODE_LOG!!! | {} | {} | 0x{} | {} | 0x{} | {}", phase, method, Long.toHexString(this.sessionId), this.cxid, Long.toHexString(this.zxid), Request.op2String(this.type));
-            LOG.info("!!!ZK_OPCODE_LOG!!! | phase={} | method={} | sessionId={}/0x{} | cxid={} | zxid={}/0x{} | opcode={} | thread={} | traceId={}", phase, method, this.sessionId, Long.toHexString(this.sessionId), this.cxid, this.zxid, Long.toHexString(this.zxid), Request.op2String(this.type), Thread.currentThread().getName(), this.traceId);
+    // --- NEW DAG LOGGING METHODS ---
+    public long logDagMethodStart(String processorName) {
+        // Safely increment and get across thread boundaries
+        int currentSeq = dagSequenceId.incrementAndGet(); 
+        long startCpuTime = getInstructionCount();
+        // Convert the integer opcode (this.type) to a readable string
+        String opName = Request.op2String(this.type); 
+        
+        LOG.info("ZK_OPCODE_LOG | Session: {}/0x{} | CXID: {} | ZXID: {}/0x{} | Seq: {} | Processor: {} | OpCode: {} | Status: START",
+                sessionId, Long.toHexString(sessionId), cxid, zxid, Long.toHexString(zxid), currentSeq, processorName, opName);
+        return startCpuTime;
+    }
+
+    public void logDagMethodEnd(String processorName, long startCpuTime) {
+        long endCpuTime = getInstructionCount();
+        long instructionCostDelta = endCpuTime - startCpuTime;
+        
+        int currentSeq = dagSequenceId.get(); 
+        String opName = Request.op2String(this.type); 
+
+        LOG.info("ZK_OPCODE_LOG | Session: {}/0x{} | CXID: {} | ZXID: {}/0x{} | Seq: {} | Processor: {} | OpCode: {} | Status: END | CostDeltaNs: {}", sessionId, Long.toHexString(sessionId), cxid, zxid, Long.toHexString(zxid), currentSeq, processorName, opName, instructionCostDelta);
     }
 
     public static final Request requestOfDeath = new Request(null, 0, 0, 0, null, null);
@@ -734,7 +754,7 @@ public class Request {
      * Get CPU instruction/time count using ThreadMXBean (actual CPU time in ns)
      */
     public static long getInstructionCount() {
-        java.lang.management.ThreadMXBean bean = java.lang.management.ManagementFactory.getThreadMXBean();
-        return bean.isCurrentThreadCpuTimeSupported() ? bean.getCurrentThreadCpuTime() : -1;
+        // java.lang.management.ThreadMXBean bean = java.lang.management.ManagementFactory.getThreadMXBean();
+        return threadBean.isCurrentThreadCpuTimeSupported() ? threadBean.getCurrentThreadCpuTime() : -1;
     }
 }

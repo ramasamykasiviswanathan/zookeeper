@@ -675,6 +675,7 @@ public class LearnerHandler extends ZooKeeperThread {
 
                 switch (qp.getType()) {
                 case Leader.ACK:
+                    LOG.info("ZK_OPCODE_LOG | Session: N/A | CXID: N/A | ZXID: {}/0x{} | Seq: N/A | Method: LearnerHandler.run | Status: NETWORK_IN | Msg: Received ACK from Sid: {}", qp.getZxid(), Long.toHexString(qp.getZxid()), this.sid);
                     if (this.learnerType == LearnerType.OBSERVER) {
                         LOG.debug("Received ACK from Observer {}", this.sid);
                     }

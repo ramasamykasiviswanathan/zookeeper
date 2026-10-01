@@ -18,6 +18,7 @@
 
 package org.apache.zookeeper.server.quorum;
 
+import org.apache.zookeeper.server.DelayInjector;
 import org.apache.zookeeper.server.Request;
 import org.apache.zookeeper.server.RequestProcessor;
 import org.apache.zookeeper.server.ServerMetrics;
@@ -66,7 +67,8 @@ public class ProposalRequestProcessor implements RequestProcessor {
     }
 
     public void processRequest(Request request) throws RequestProcessorException {
-        request.trackGraph("PROCESS_PROPOSE", "ProposalRequestProcessor.processRequest");
+        DelayInjector.inject("PROPOSAL", System.getProperty("zookeeper.test.delayStages", ""));
+        // request.trackGraph("PROCESS_PROPOSE", "ProposalRequestProcessor.processRequest");
         /* In the following IF-THEN-ELSE block, we process syncs on the leader.
          * If the sync is coming from a follower, then the follower
          * handler adds it to syncHandler. Otherwise, if it is a client of

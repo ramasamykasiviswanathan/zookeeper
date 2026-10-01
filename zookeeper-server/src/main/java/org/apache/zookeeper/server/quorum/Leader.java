@@ -1047,73 +1047,86 @@ public class Leader extends LearnerMaster {
      */
     @Override
     public synchronized void processAck(long sid, long zxid, SocketAddress followerAddr) {
-        LOG.info("!!!ZK_OPCODE_LOG!!! | QUORUM_RX_ACK | Leader.processAck | zxid={}/0x{} | sid={} | thread={} | followerAddr={}", zxid, Long.toHexString(zxid), sid, Thread.currentThread().getName(), followerAddr);
-        if (!allowedToCommit) {
-            return; // last op committed was a leader change - from now on
+        // 1. Look up the proposal to get the original Request object
+        Proposal proposal = outstandingProposals.get(zxid);
+        long startCpuTime = 0;
+        
+        if (proposal != null && proposal.request != null) {
+            startCpuTime = proposal.request.logDagMethodStart("Leader.processAck(sid:" + sid + ")");
         }
-        // the new leader should commit
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Ack zxid: 0x{}", Long.toHexString(zxid));
-            for (Proposal p : outstandingProposals.values()) {
-                long packetZxid = p.packet.getZxid();
-                LOG.trace("outstanding proposal: 0x{}", Long.toHexString(packetZxid));
+
+        try {
+            if (!allowedToCommit) {
+                return; // last op committed was a leader change - from now on
             }
-            LOG.trace("outstanding proposals all");
-        }
-
-        if ((zxid & 0xffffffffL) == 0) {
-            /*
-             * We no longer process NEWLEADER ack with this method. However,
-             * the learner sends an ack back to the leader after it gets
-             * UPTODATE, so we just ignore the message.
-             */
-            return;
-        }
-
-        if (outstandingProposals.size() == 0) {
-            LOG.debug("outstanding is 0");
-            return;
-        }
-        if (lastCommitted >= zxid) {
-            LOG.debug(
-                "proposal has already been committed, pzxid: 0x{} zxid: 0x{}",
-                Long.toHexString(lastCommitted),
-                Long.toHexString(zxid));
-            // The proposal has already been committed
-            return;
-        }
-        Proposal p = outstandingProposals.get(zxid);
-        if (p == null) {
-            LOG.warn("Trying to commit future proposal: zxid 0x{} from {}", Long.toHexString(zxid), followerAddr);
-            return;
-        }
-
-        if (ackLoggingFrequency > 0 && (zxid % ackLoggingFrequency == 0)) {
-            p.request.logLatency(ServerMetrics.getMetrics().ACK_LATENCY, Long.toString(sid));
-        }
-
-        p.addAck(sid);
-        LOG.trace("Quorum_TRACE event=ack zxid=0x{} sid={} ackAdded=true", Long.toHexString(zxid), sid);
-
-        boolean hasCommitted = tryToCommit(p, zxid, followerAddr);
-
-        // If p is a reconfiguration, multiple other operations may be ready to be committed,
-        // since operations wait for different sets of acks.
-        // Currently we only permit one outstanding reconfiguration at a time
-        // such that the reconfiguration and subsequent outstanding ops proposed while the reconfig is
-        // pending all wait for a quorum of old and new config, so its not possible to get enough acks
-        // for an operation without getting enough acks for preceding ops. But in the future if multiple
-        // concurrent reconfigs are allowed, this can happen and then we need to check whether some pending
-        // ops may already have enough acks and can be committed, which is what this code does.
-
-        if (hasCommitted && p.request != null && p.request.getHdr().getType() == OpCode.reconfig) {
-            long curZxid = zxid;
-            while (allowedToCommit && hasCommitted && p != null) {
-                curZxid++;
-                p = outstandingProposals.get(curZxid);
-                if (p != null) {
-                    hasCommitted = tryToCommit(p, curZxid, null);
+            // the new leader should commit
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Ack zxid: 0x{}", Long.toHexString(zxid));
+                for (Proposal p : outstandingProposals.values()) {
+                    long packetZxid = p.packet.getZxid();
+                    LOG.trace("outstanding proposal: 0x{}", Long.toHexString(packetZxid));
                 }
+                LOG.trace("outstanding proposals all");
+            }
+
+            if ((zxid & 0xffffffffL) == 0) {
+                /*
+                * We no longer process NEWLEADER ack with this method. However,
+                * the learner sends an ack back to the leader after it gets
+                * UPTODATE, so we just ignore the message.
+                */
+                return;
+            }
+
+            if (outstandingProposals.size() == 0) {
+                LOG.debug("outstanding is 0");
+                return;
+            }
+            if (lastCommitted >= zxid) {
+                LOG.debug(
+                    "proposal has already been committed, pzxid: 0x{} zxid: 0x{}",
+                    Long.toHexString(lastCommitted),
+                    Long.toHexString(zxid));
+                // The proposal has already been committed
+                return;
+            }
+            Proposal p = outstandingProposals.get(zxid);
+            if (p == null) {
+                LOG.warn("Trying to commit future proposal: zxid 0x{} from {}", Long.toHexString(zxid), followerAddr);
+                return;
+            }
+
+            if (ackLoggingFrequency > 0 && (zxid % ackLoggingFrequency == 0)) {
+                p.request.logLatency(ServerMetrics.getMetrics().ACK_LATENCY, Long.toString(sid));
+            }
+
+            p.addAck(sid);
+            LOG.trace("Quorum_TRACE event=ack zxid=0x{} sid={} ackAdded=true", Long.toHexString(zxid), sid);
+
+            boolean hasCommitted = tryToCommit(p, zxid, followerAddr);
+
+            // If p is a reconfiguration, multiple other operations may be ready to be committed,
+            // since operations wait for different sets of acks.
+            // Currently we only permit one outstanding reconfiguration at a time
+            // such that the reconfiguration and subsequent outstanding ops proposed while the reconfig is
+            // pending all wait for a quorum of old and new config, so its not possible to get enough acks
+            // for an operation without getting enough acks for preceding ops. But in the future if multiple
+            // concurrent reconfigs are allowed, this can happen and then we need to check whether some pending
+            // ops may already have enough acks and can be committed, which is what this code does.
+
+            if (hasCommitted && p.request != null && p.request.getHdr().getType() == OpCode.reconfig) {
+                long curZxid = zxid;
+                while (allowedToCommit && hasCommitted && p != null) {
+                    curZxid++;
+                    p = outstandingProposals.get(curZxid);
+                    if (p != null) {
+                        hasCommitted = tryToCommit(p, curZxid, null);
+                    }
+                }
+            }
+        } finally {
+            if (proposal != null && proposal.request != null) {
+                proposal.request.logDagMethodEnd("Leader.processAck(sid:" + sid + ")", startCpuTime);
             }
         }
     }
@@ -1292,7 +1305,6 @@ public class Leader extends LearnerMaster {
      * @return the proposal that is queued to send to all the members
      */
     public Proposal propose(Request request) throws XidRolloverException {
-        request.trackGraph("QUORUM_TX_PROPOSE", "Leader.propose");
         if (request.isThrottled()) {
             LOG.error("Throttled request send as proposal: {}. Exiting.", request);
             ServiceUtils.requestSystemExit(ExitCode.UNEXPECTED_ERROR.getValue());
@@ -1329,6 +1341,7 @@ public class Leader extends LearnerMaster {
 
             lastProposed = p.packet.getZxid();
             outstandingProposals.put(lastProposed, p);
+            LOG.info("ZK_OPCODE_LOG | Session: {}/0x{} | CXID: {} | ZXID: {}/0x{} | Seq: N/A | Method: Leader.propose | Status: NETWORK_OUT | Msg: Broadcasting PROPOSAL", request.sessionId, Long.toHexString(request.sessionId), request.cxid, request.zxid, Long.toHexString(request.zxid));
             sendPacket(pp);
         }
         ServerMetrics.getMetrics().PROPOSAL_COUNT.add(1);

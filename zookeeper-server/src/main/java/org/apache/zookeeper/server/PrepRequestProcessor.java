@@ -753,19 +753,24 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
      * @param request
      */
     protected void pRequest(Request request) throws RequestProcessorException {
-        request.trackGraph("PROCESS_PREP", "PrepRequestProcessor.pRequest");
-        request.setHdr(null);
-        request.setTxn(null);
+        DelayInjector.inject("PREP",System.getProperty("zookeeper.test.delayStages", ""));
+        long startCpuTime = request.logDagMethodStart("PrepRequestProcessor.pRequest(execute)");
+        try {
+            request.setHdr(null);
+            request.setTxn(null);
 
-        if (!request.isThrottled()) {
-          pRequestHelper(request);
+            if (!request.isThrottled()) {
+            pRequestHelper(request);
+            }
+
+            request.zxid = zks.getZxid();
+            long timeFinishedPrepare = Time.currentElapsedTime();
+            ServerMetrics.getMetrics().PREP_PROCESS_TIME.add(timeFinishedPrepare - request.prepStartTime);
+            nextProcessor.processRequest(request);
+            ServerMetrics.getMetrics().PROPOSAL_PROCESS_TIME.add(Time.currentElapsedTime() - timeFinishedPrepare);
+        } finally {
+            request.logDagMethodEnd("PrepRequestProcessor.pRequest(execute)", startCpuTime);
         }
-
-        request.zxid = zks.getZxid();
-        long timeFinishedPrepare = Time.currentElapsedTime();
-        ServerMetrics.getMetrics().PREP_PROCESS_TIME.add(timeFinishedPrepare - request.prepStartTime);
-        nextProcessor.processRequest(request);
-        ServerMetrics.getMetrics().PROPOSAL_PROCESS_TIME.add(Time.currentElapsedTime() - timeFinishedPrepare);
     }
 
     /**
@@ -1036,9 +1041,16 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
     }
 
     public void processRequest(Request request) {
-        request.prepQueueStartTime = Time.currentElapsedTime();
-        submittedRequests.add(request);
-        ServerMetrics.getMetrics().PREP_PROCESSOR_QUEUED.add(1);
+        // 1. Mark START and get the baseline instruction time
+        long startCpuTime = request.logDagMethodStart("PrepRequestProcessor.processRequest(enqueue)");
+        try {
+            request.prepQueueStartTime = Time.currentElapsedTime();
+            submittedRequests.add(request);
+            ServerMetrics.getMetrics().PREP_PROCESSOR_QUEUED.add(1);
+        } finally {
+            // 2. Mark END and calculate the instruction cost delta
+            request.logDagMethodEnd("PrepRequestProcessor.processRequest(enqueue)", startCpuTime);
+        }
     }
 
     public void shutdown() {

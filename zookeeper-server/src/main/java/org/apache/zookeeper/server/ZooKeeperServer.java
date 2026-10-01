@@ -1207,7 +1207,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
 
     public void submitRequest(Request si) {
         if (si != null) {
-           si.trackGraph("INGRESS", "ZooKeeperServer.submitRequest");
+        //    si.trackGraph("INGRESS", "ZooKeeperServer.submitRequest");
         }
         if (restoreLatch != null) {
             try {

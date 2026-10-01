@@ -159,7 +159,7 @@ public class Follower extends Learner {
             ping(qp);
             break;
         case Leader.PROPOSAL:
-            LOG.info("!!!ZK_OPCODE_LOG!!! | QUORUM_RX_PROPOSE | Follower.processPacket | zxid={}/0x{} | type=PROPOSAL | thread={}", qp.getZxid(), Long.toHexString(qp.getZxid()), Thread.currentThread().getName());
+            LOG.info("ZK_OPCODE_LOG | Session: N/A | CXID: N/A | ZXID: {}/0x{} | Seq: N/A | Method: Follower.processPacket | Status: NETWORK_IN | Msg: Received PROPOSAL", qp.getZxid(),Long.toHexString(qp.getZxid()));
             ServerMetrics.getMetrics().LEARNER_PROPOSAL_RECEIVED_COUNT.add(1);
             TxnLogEntry logEntry = SerializeUtils.deserializeTxn(qp.getData());
             TxnHeader hdr = logEntry.getHeader();
@@ -198,7 +198,7 @@ public class Follower extends Learner {
             }
             break;
         case Leader.COMMIT:
-            LOG.info("!!!ZK_OPCODE_LOG!!! | QUORUM_RX_COMMIT | Follower.processPacket | zxid={}/0x{} | type=COMMIT | thread={}", qp.getZxid(), Long.toHexString(qp.getZxid()), Thread.currentThread().getName());
+            LOG.info("ZK_OPCODE_LOG | Session: N/A | CXID: N/A | ZXID: {}/0x{} | Seq: 0 | Processor: Follower.processPacket | OpCode: COMMIT_IN | Status: NETWORK_IN", qp.getZxid(), Long.toHexString(qp.getZxid()));
             ServerMetrics.getMetrics().LEARNER_COMMIT_RECEIVED_COUNT.add(1);
             fzk.commit(qp.getZxid());
             if (om != null) {

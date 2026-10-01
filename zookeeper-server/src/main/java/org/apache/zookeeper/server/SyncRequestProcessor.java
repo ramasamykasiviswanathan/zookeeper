@@ -162,6 +162,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
             lastFlushTime = Time.currentElapsedTime();
             while (true) {
                 ServerMetrics.getMetrics().SYNC_PROCESSOR_QUEUE_SIZE.add(queuedRequests.size());
+                DelayInjector.inject("SYNC", System.getProperty("zookeeper.test.delayStages", ""));
 
                 long pollTime = Math.min(zks.getMaxWriteQueuePollTime(), getRemainingDelay());
                 Request si = queuedRequests.poll(pollTime, TimeUnit.MILLISECONDS);
@@ -272,12 +273,18 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
     }
 
     public void processRequest(final Request request) {
-        request.trackGraph("PROCESS_SYNC", "SyncRequestProcessor.processRequest");
-        Objects.requireNonNull(request, "Request cannot be null");
+        // 1. Mark START and get the baseline instruction time
+        long startCpuTime = request.logDagMethodStart("SyncRequestProcessor.processRequest(enqueue)");
+        try {
+            Objects.requireNonNull(request, "Request cannot be null");
 
-        request.syncQueueStartTime = Time.currentElapsedTime();
-        queuedRequests.add(request);
-        ServerMetrics.getMetrics().SYNC_PROCESSOR_QUEUED.add(1);
+            request.syncQueueStartTime = Time.currentElapsedTime();
+            queuedRequests.add(request);
+            ServerMetrics.getMetrics().SYNC_PROCESSOR_QUEUED.add(1);
+        } finally {
+            // 2. Mark END and calculate the instruction cost delta
+            request.logDagMethodEnd("SyncRequestProcessor.processRequest(enqueue)", startCpuTime);
+        }
     }
 
 }
