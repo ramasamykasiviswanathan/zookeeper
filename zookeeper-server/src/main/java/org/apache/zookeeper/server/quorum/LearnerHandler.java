@@ -42,6 +42,7 @@ import org.apache.jute.BinaryInputArchive;
 import org.apache.jute.BinaryOutputArchive;
 import org.apache.zookeeper.ZooDefs.OpCode;
 import org.apache.zookeeper.common.Time;
+import org.apache.zookeeper.server.DelayInjector;
 import org.apache.zookeeper.server.Request;
 import org.apache.zookeeper.server.RequestRecord;
 import org.apache.zookeeper.server.ServerMetrics;
@@ -654,6 +655,7 @@ public class LearnerHandler extends ZooKeeperThread {
 
             while (true) {
                 qp = new QuorumPacket();
+                DelayInjector.inject("ACK_RECV", System.getProperty("zookeeper.test.delayStages", ""));
                 ia.readRecord(qp, "packet");
                 messageTracker.trackReceived(qp.getType());
 

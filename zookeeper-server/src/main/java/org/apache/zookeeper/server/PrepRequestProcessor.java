@@ -753,7 +753,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
      * @param request
      */
     protected void pRequest(Request request) throws RequestProcessorException {
-        DelayInjector.inject("PREP",System.getProperty("zookeeper.test.delayStages", ""));
+        DelayInjector.inject("PREP",System.getProperty("zookeeper.test.delayStages", ""), request);
         long startCpuTime = request.logDagMethodStart("PrepRequestProcessor.pRequest(execute)");
         try {
             request.setHdr(null);
@@ -1044,6 +1044,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
         // 1. Mark START and get the baseline instruction time
         long startCpuTime = request.logDagMethodStart("PrepRequestProcessor.processRequest(enqueue)");
         try {
+            DelayInjector.inject("PREP_ENQUEUE", System.getProperty("zookeeper.test.delayStages", ""), request);
             request.prepQueueStartTime = Time.currentElapsedTime();
             submittedRequests.add(request);
             ServerMetrics.getMetrics().PREP_PROCESSOR_QUEUED.add(1);

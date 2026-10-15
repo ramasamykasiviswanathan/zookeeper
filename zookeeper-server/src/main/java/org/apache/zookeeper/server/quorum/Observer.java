@@ -24,6 +24,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.jute.Record;
 import org.apache.zookeeper.common.Time;
+import org.apache.zookeeper.server.DelayInjector;
 import org.apache.zookeeper.server.ObserverBean;
 import org.apache.zookeeper.server.Request;
 import org.apache.zookeeper.server.ServerMetrics;
@@ -176,6 +177,7 @@ public class Observer extends Learner {
      * @throws Exception
      */
     protected void processPacket(QuorumPacket qp) throws Exception {
+        DelayInjector.inject("OBSERVER_RECV", System.getProperty("zookeeper.test.delayStages", ""));
         TxnLogEntry logEntry;
         TxnHeader hdr;
         TxnDigest digest;

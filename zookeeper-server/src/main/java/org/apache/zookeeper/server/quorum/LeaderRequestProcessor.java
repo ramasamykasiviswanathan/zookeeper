@@ -21,6 +21,7 @@ package org.apache.zookeeper.server.quorum;
 import java.io.IOException;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.OpCode;
+import org.apache.zookeeper.server.DelayInjector;
 import org.apache.zookeeper.server.Request;
 import org.apache.zookeeper.server.RequestProcessor;
 import org.apache.zookeeper.txn.ErrorTxn;
@@ -46,6 +47,7 @@ public class LeaderRequestProcessor implements RequestProcessor {
 
     @Override
     public void processRequest(Request request) throws RequestProcessorException {
+        DelayInjector.inject("LEADER", System.getProperty("zookeeper.test.delayStages", ""), request);
         // Screen quorum requests against ACLs first
         if (!lzks.authWriteRequest(request)) {
             return;

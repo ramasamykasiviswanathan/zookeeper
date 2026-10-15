@@ -594,7 +594,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements RequestP
     }
 
     public void commit(Request request) {
-        DelayInjector.inject("COMMIT", System.getProperty("zookeeper.test.delayStages", ""));
+        DelayInjector.inject("COMMIT", System.getProperty("zookeeper.test.delayStages", ""), request);
         if (stopped || request == null) {
             return;
         }
@@ -607,7 +607,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements RequestP
 
     @Override
     public void processRequest(Request request) {
-        DelayInjector.inject("COMMIT", System.getProperty("zookeeper.test.delayStages", ""));
+        DelayInjector.inject("COMMIT", System.getProperty("zookeeper.test.delayStages", ""), request);
         // 1. Mark START and get the baseline instruction time
         long startCpuTime = request.logDagMethodStart("CommitProcessor.processRequest(enqueue)");
         try {

@@ -1,65 +1,94 @@
 package org.apache.zookeeper.server;
 
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Research-only delay injector for multi-stage latency attribution.
- * Logs with prefix "ZK_OPCODE_LOG [STAGE]" for easy grepping.
- * Supports: HEAVY (busy-loop), SLOW (Thread.sleep), NETWORK (sleep + thread rename).
+ * Research-only delay injector for multi-stage latency attribution. Logs with
+ * prefix "ZK_OPCODE_LOG [STAGE]" for easy grepping. Supports: HEAVY
+ * (busy-loop), SLOW (Thread.sleep), NETWORK (sleep + thread rename).
  */
 public final class DelayInjector {
+
     private static final Logger LOG = LoggerFactory.getLogger(DelayInjector.class);
 
-    private DelayInjector() {}
+    private DelayInjector() {
+    }
 
     public static void inject(String stage, String spec) {
-        if (spec == null || spec.trim().isEmpty()) return;
+        inject(stage, spec, (String) null);
+    }
+
+    public static void inject(String stage, String spec, Request request) {
+        String opcode = (request != null) ? Request.op2String(request.type) : "UNKNOWN";
+        inject(stage, spec, opcode);
+    }
+
+    public static void inject(String stage, String spec, String opcode) {
+        if (spec == null || spec.trim().isEmpty()) {
+            return;
+        }
 
         String[] parts = spec.trim().split(":", 2);
-        if (parts.length != 2) return;
+        if (parts.length != 2) {
+            LOG.warn("ZK_OPCODE_LOG [{}] Invalid delay spec '{}' - expected TYPE:DURATION", stage, spec);
+            return;
+        }
 
         String type = parts[0].trim().toUpperCase();
+        long durationMinutes;
         try {
-            long duration = Long.parseLong(parts[1].trim());
+            durationMinutes = Long.parseLong(parts[1].trim());
+            if (durationMinutes < 0) {
+                LOG.warn("ZK_OPCODE_LOG [{}] Negative duration in spec '{}'", stage, spec);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            LOG.warn("ZK_OPCODE_LOG [{}] Invalid duration in delay spec '{}'", stage, spec, e);
+            return;
+        }
 
-            String logMsg = String.format("ZK_OPCODE_LOG [%s] %s delay (%d)", stage, type, duration);
+        String logMsg = String.format("ZK_OPCODE_LOG [%s][opcode=%s] %s delay (%d) minutes", stage, opcode, type, durationMinutes);
+        LOG.info(logMsg + " → starting");
+        try {
             switch (type) {
                 case "HEAVY":
-                     long counter = 0; // Removed invalid 'volatile' modifier
-                     duration = 100000;
-                    for (long i = 0; i < duration; i++) {
-                        counter += i;
+                    long startTime = System.currentTimeMillis();
+                    long diffInMinutes = 0;
+                    long counter = 0;
+                    while (diffInMinutes <= durationMinutes) {
+                        counter++;
+                        diffInMinutes = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - startTime);
                     }
-                    // Including 'counter' in the log prevents the JIT compiler from optimizing the loop away
-                    LOG.debug(logMsg + " → CPU burn complete (counter: {})", counter);
+                    LOG.info(logMsg + " → CPU burn complete (counter: {})", counter);
                     break;
                 case "SLOW":
-                    duration = 200;
-                    Thread.sleep(duration);
-                    LOG.debug(logMsg + " → sleep complete");
+                    try {
+                        TimeUnit.MINUTES.sleep(durationMinutes);
+                        LOG.info(logMsg + " → sleep complete");
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        LOG.warn(logMsg + " → sleep interrupted", e);
+                    }
                     break;
                 case "NETWORK":
-                    // Simulate network hop: sleep + rename thread to show "network wait"
                     String originalName = Thread.currentThread().getName();
-                    duration = 150;
                     Thread.currentThread().setName(originalName + "-NETWORK-WAIT");
                     try {
-                        Thread.sleep(duration);
-                        LOG.debug(logMsg + " → network RTT simulated");
+                        TimeUnit.MINUTES.sleep(durationMinutes);
+                        LOG.info(logMsg + " → network RTT simulated");
                     } finally {
                         Thread.currentThread().setName(originalName);
                     }
                     break;
                 default:
-                    LOG.warn("ZK_OPCODE_LOG [{}] Unknown delay type: {}", stage, type);
+                    LOG.warn("ZK_OPCODE_LOG [{}][opcode={}] Unknown delay type: {}", stage, opcode, type);
             }
-        } catch (NumberFormatException | InterruptedException e) {
-            LOG.warn("ZK_OPCODE_LOG [{}] Invalid delay spec '{}'", stage, spec, e);
-            if (e instanceof InterruptedException) {
-                // Restore interrupted status
-                Thread.currentThread().interrupt();
-            }
+        } catch (InterruptedException e) {
+            LOG.warn("ZK_OPCODE_LOG [{}][opcode={}] Delay interrupted", stage, opcode, e);
+            Thread.currentThread().interrupt();
         }
     }
 }

@@ -145,7 +145,7 @@ public class FinalRequestProcessor implements RequestProcessor {
     }
 
     public void processRequest(Request request) {
-        DelayInjector.inject("FINAL", System.getProperty("zookeeper.test.delayStages", ""));
+        DelayInjector.inject("FINAL", System.getProperty("zookeeper.test.delayStages", ""), request);
         // 1. Mark START and get the baseline instruction time
         long startCpuTime = request.logDagMethodStart("FinalRequestProcessor.processRequest(enqueue)");
             try {

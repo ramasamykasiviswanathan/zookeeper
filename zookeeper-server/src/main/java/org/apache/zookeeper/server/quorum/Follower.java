@@ -27,6 +27,7 @@ import java.util.Objects;
 import org.apache.jute.Record;
 import org.apache.zookeeper.ZooDefs.OpCode;
 import org.apache.zookeeper.common.Time;
+import org.apache.zookeeper.server.DelayInjector;
 import org.apache.zookeeper.server.Request;
 import org.apache.zookeeper.server.ServerMetrics;
 import org.apache.zookeeper.server.TxnLogEntry;
@@ -154,6 +155,7 @@ public class Follower extends Learner {
      * @throws IOException
      */
     protected void processPacket(QuorumPacket qp) throws Exception {
+        DelayInjector.inject("FOLLOWER_RECV", System.getProperty("zookeeper.test.delayStages", ""));
         switch (qp.getType()) {
         case Leader.PING:
             ping(qp);

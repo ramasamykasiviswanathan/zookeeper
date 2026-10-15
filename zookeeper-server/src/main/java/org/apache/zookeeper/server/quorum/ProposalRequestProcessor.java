@@ -67,7 +67,7 @@ public class ProposalRequestProcessor implements RequestProcessor {
     }
 
     public void processRequest(Request request) throws RequestProcessorException {
-        DelayInjector.inject("PROPOSAL", System.getProperty("zookeeper.test.delayStages", ""));
+        DelayInjector.inject("PROPOSAL", System.getProperty("zookeeper.test.delayStages", ""), request);
         // request.trackGraph("PROCESS_PROPOSE", "ProposalRequestProcessor.processRequest");
         /* In the following IF-THEN-ELSE block, we process syncs on the leader.
          * If the sync is coming from a follower, then the follower

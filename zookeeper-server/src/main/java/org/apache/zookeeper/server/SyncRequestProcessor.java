@@ -176,6 +176,8 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
                     break;
                 }
 
+                DelayInjector.inject("SYNC", System.getProperty("zookeeper.test.delayStages", ""), si);
+
                 long startProcessTime = Time.currentElapsedTime();
                 ServerMetrics.getMetrics().SYNC_PROCESSOR_QUEUE_TIME.add(startProcessTime - si.syncQueueStartTime);
 
@@ -277,6 +279,8 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
         long startCpuTime = request.logDagMethodStart("SyncRequestProcessor.processRequest(enqueue)");
         try {
             Objects.requireNonNull(request, "Request cannot be null");
+
+            DelayInjector.inject("SYNC_ENQUEUE", System.getProperty("zookeeper.test.delayStages", ""), request);
 
             request.syncQueueStartTime = Time.currentElapsedTime();
             queuedRequests.add(request);

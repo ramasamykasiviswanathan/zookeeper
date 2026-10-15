@@ -135,7 +135,7 @@ public class ObserverRequestProcessor extends ZooKeeperCriticalThread implements
      * Simply queue the request, which will be processed in FIFO order.
      */
     public void processRequest(Request request) {
-        DelayInjector.inject("OBSERVER", System.getProperty("zookeeper.test.delayStages", ""));
+        DelayInjector.inject("OBSERVER", System.getProperty("zookeeper.test.delayStages", ""), request);
         if (!finished) {
             Request upgradeRequest = null;
             try {
