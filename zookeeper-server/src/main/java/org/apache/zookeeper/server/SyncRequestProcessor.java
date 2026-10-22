@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.zookeeper.server;
 
 import java.io.Flushable;
@@ -38,17 +37,15 @@ import org.slf4j.LoggerFactory;
  * the io efficiently. The request is not passed to the next RequestProcessor
  * until its log has been synced to disk.
  *
- * SyncRequestProcessor is used in 3 different cases
- * 1. Leader - Sync request to disk and forward it to AckRequestProcessor which
- *             send ack back to itself.
- * 2. Follower - Sync request to disk and forward request to
- *             SendAckRequestProcessor which send the packets to leader.
- *             SendAckRequestProcessor is flushable which allow us to force
- *             push packets to leader.
- * 3. Observer - Sync committed request to disk (received as INFORM packet).
- *             It never send ack back to the leader, so the nextProcessor will
- *             be null. This change the semantic of txnlog on the observer
- *             since it only contains committed txns.
+ * SyncRequestProcessor is used in 3 different cases 1. Leader - Sync request to
+ * disk and forward it to AckRequestProcessor which send ack back to itself. 2.
+ * Follower - Sync request to disk and forward request to
+ * SendAckRequestProcessor which send the packets to leader.
+ * SendAckRequestProcessor is flushable which allow us to force push packets to
+ * leader. 3. Observer - Sync committed request to disk (received as INFORM
+ * packet). It never send ack back to the leader, so the nextProcessor will be
+ * null. This change the semantic of txnlog on the observer since it only
+ * contains committed txns.
  */
 public class SyncRequestProcessor extends ZooKeeperCriticalThread implements RequestProcessor {
 
@@ -56,7 +53,9 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
 
     private static final Request REQUEST_OF_DEATH = Request.requestOfDeath;
 
-    /** The number of log entries to log before starting a snapshot */
+    /**
+     * The number of log entries to log before starting a snapshot
+     */
     private static int snapCount = ZooKeeperServer.getSnapCount();
 
     /**
@@ -94,8 +93,8 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
     }
 
     /**
-     * used by tests to check for changing
-     * snapcounts
+     * used by tests to check for changing snapcounts
+     *
      * @param count
      */
     public static void setSnapCount(int count) {
@@ -104,6 +103,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
 
     /**
      * used by tests to get the snapcount
+     *
      * @return the snapcount
      */
     public static int getSnapCount() {
@@ -119,9 +119,10 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
         return 0;
     }
 
-    /** If both flushDelay and maxMaxBatchSize are set (bigger than 0), flush
-     * whenever either condition is hit. If only one or the other is
-     * set, flush only when the relevant condition is hit.
+    /**
+     * If both flushDelay and maxMaxBatchSize are set (bigger than 0), flush
+     * whenever either condition is hit. If only one or the other is set, flush
+     * only when the relevant condition is hit.
      */
     private boolean shouldFlush() {
         long flushDelay = zks.getFlushDelay();
@@ -133,8 +134,8 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
     }
 
     /**
-     * used by tests to check for changing
-     * snapcounts
+     * used by tests to check for changing snapcounts
+     *
      * @param size
      */
     public static void setSnapSizeInBytes(long size) {
@@ -145,7 +146,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
         int logCount = zks.getZKDatabase().getTxnCount();
         long logSize = zks.getZKDatabase().getTxnSize();
         return (logCount > (snapCount / 2 + randRoll))
-               || (snapSizeInBytes > 0 && logSize > (snapSizeInBytes / 2 + randSize));
+                || (snapSizeInBytes > 0 && logSize > (snapSizeInBytes / 2 + randSize));
     }
 
     private void resetSnapshotStats() {
@@ -162,7 +163,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
             lastFlushTime = Time.currentElapsedTime();
             while (true) {
                 ServerMetrics.getMetrics().SYNC_PROCESSOR_QUEUE_SIZE.add(queuedRequests.size());
-                DelayInjector.inject("SYNC", System.getProperty("zookeeper.test.delayStages", ""));
+                DelayInjector.inject("SYNC", null);
 
                 long pollTime = Math.min(zks.getMaxWriteQueuePollTime(), getRemainingDelay());
                 Request si = queuedRequests.poll(pollTime, TimeUnit.MILLISECONDS);
@@ -176,7 +177,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
                     break;
                 }
 
-                DelayInjector.inject("SYNC", System.getProperty("zookeeper.test.delayStages", ""), si);
+                DelayInjector.inject("SYNC_0", System.getProperty("zookeeper.test.delayStages", ""), si);
 
                 long startProcessTime = Time.currentElapsedTime();
                 ServerMetrics.getMetrics().SYNC_PROCESSOR_QUEUE_TIME.add(startProcessTime - si.syncQueueStartTime);

@@ -198,7 +198,7 @@ public class Learner {
      * @throws IOException
      */
     void writePacket(QuorumPacket pp, boolean flush) throws IOException {
-        DelayInjector.inject("LEARNER_SEND", System.getProperty("zookeeper.test.delayStages", ""));
+        DelayInjector.inject("LEARNER_SEND", null);
         if (asyncSending) {
             sender.queuePacket(pp);
         } else {
@@ -233,7 +233,7 @@ public class Learner {
      * @throws IOException
      */
     void readPacket(QuorumPacket pp) throws IOException {
-        DelayInjector.inject("LEARNER_RECV", System.getProperty("zookeeper.test.delayStages", ""));
+        DelayInjector.inject("LEARNER_RECV", null);
         synchronized (leaderIs) {
             leaderIs.readRecord(pp, "packet");
             messageTracker.trackReceived(pp.getType());
