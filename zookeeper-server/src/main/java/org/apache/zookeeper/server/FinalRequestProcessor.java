@@ -393,6 +393,7 @@ public class FinalRequestProcessor implements RequestProcessor {
                     break;
                 }
                 case OpCode.getData: {
+                    DelayInjector.inject("GETDATA", System.getProperty("zookeeper.test.delayStages",""), request);
                     lastOp = "GETD";
                     GetDataRequest getDataRequest = request.readRequestRecord(GetDataRequest::new);
                     path = getDataRequest.getPath();
@@ -478,6 +479,7 @@ public class FinalRequestProcessor implements RequestProcessor {
                     break;
                 }
                 case OpCode.getChildren: {
+                    DelayInjector.inject("GETCHILDREN", System.getProperty("zookeeper.test.delayStages",""), request);
                     lastOp = "GETC";
                     GetChildrenRequest getChildrenRequest = request.readRequestRecord(GetChildrenRequest::new);
                     path = getChildrenRequest.getPath();

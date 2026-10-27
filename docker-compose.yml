@@ -12,8 +12,8 @@ services:
       - "5005:5005"
     environment:
       ZOO_MY_ID: 1
-      ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:15,5:2:5"
+      ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:0,5:2:0,8:1:0"
     volumes:
       - zoo1_data:/data
       - zoo1_datalog:/logs
@@ -29,8 +29,8 @@ services:
       - "5006:5005"
     environment:
       ZOO_MY_ID: 2
-      ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:15,5:2:5"
+      ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:0,5:2:0,8:1:0"
     volumes:
       - zoo2_data:/data
       - zoo2_datalog:/logs
@@ -46,11 +46,45 @@ services:
       - "5007:5005"
     environment:
       ZOO_MY_ID: 3
-      ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:15,5:2:5"
+      ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:0,5:2:0,8:1:0"
     volumes:
       - zoo3_data:/data
       - zoo3_datalog:/logs
+
+  zoo4:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zoo4
+    hostname: zoo4
+    ports:
+      - "2184:2181"
+      - "5008:5005"
+    environment:
+      ZOO_MY_ID: 4
+      ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:0,5:2:0,8:1:0"
+    volumes:
+      - zoo4_data:/data
+      - zoo4_datalog:/logs
+
+  zoo5:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zoo5
+    hostname: zoo5
+    ports:
+      - "2185:2181"
+      - "5009:5005"
+    environment:
+      ZOO_MY_ID: 5
+      ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:0,5:2:0,8:1:0"
+    volumes:
+      - zoo5_data:/data
+      - zoo5_datalog:/logs
 
 volumes:
   zoo1_data:
@@ -59,3 +93,7 @@ volumes:
   zoo2_datalog:
   zoo3_data:
   zoo3_datalog:
+  zoo4_data:
+  zoo4_datalog:
+  zoo5_data:
+  zoo5_datalog:

@@ -1748,6 +1748,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
                 return;
             } else {
                 Request si = new Request(cnxn, cnxn.getSessionId(), h.getXid(), h.getType(), request, cnxn.getAuthInfo());
+                DelayInjector.inject("SERVER_RECV", System.getProperty("zookeeper.test.delayStages",""), si);
                 int length = request.limit();
                 if (isLargeRequest(length)) {
                     // checkRequestSize will throw IOException if request is rejected

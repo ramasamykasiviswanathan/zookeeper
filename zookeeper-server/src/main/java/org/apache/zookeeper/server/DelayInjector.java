@@ -12,15 +12,12 @@ import org.slf4j.LoggerFactory;
  * Research-only delay injector for multi-stage latency attribution. Logs with
  * prefix "ZK_OPCODE_LOG [STAGE]" for easy grepping. Supports: HEAVY
  * (busy-loop), SLOW (Thread.sleep), NETWORK (sleep + thread rename).
- * 
+ *
  * Activation via per-opcode configuration:
- *   -Dzookeeper.test.delayPerOpcode=opcode:category:minutes,opcode:category:minutes
- * 
- * Delay categories are numeric:
- *   1 = SLOW
- *   2 = HEAVY
- *   3 = NETWORK
- * 
+ * -Dzookeeper.test.delayPerOpcode=opcode:category:minutes,opcode:category:minutes
+ *
+ * Delay categories are numeric: 1 = SLOW 2 = HEAVY 3 = NETWORK
+ *
  * By default, if delayPerOpcode is not set or empty, no delays are injected.
  */
 public final class DelayInjector {
@@ -28,8 +25,10 @@ public final class DelayInjector {
     private static final Logger LOG = LoggerFactory.getLogger(DelayInjector.class);
 
     private static final class DelaySpec {
+
         final int category;
         final long durationMinutes;
+
         DelaySpec(int category, long durationMinutes) {
             this.category = category;
             this.durationMinutes = durationMinutes;
@@ -101,9 +100,15 @@ public final class DelayInjector {
     private static void injectInternal(String stage, String opcode, int opcodeNum, int category, long durationMinutes) {
         String typeName;
         switch (category) {
-            case 1: typeName = "SLOW"; break;
-            case 2: typeName = "HEAVY"; break;
-            case 3: typeName = "NETWORK"; break;
+            case 1:
+                typeName = "SLOW";
+                break;
+            case 2:
+                typeName = "HEAVY";
+                break;
+            case 3:
+                typeName = "NETWORK";
+                break;
             default:
                 LOG.warn("ZK_OPCODE_LOG [{}][opcode={}] Unknown delay category: {}", stage, opcode, category);
                 return;
@@ -149,5 +154,3 @@ public final class DelayInjector {
         }
     }
 }
-
-
