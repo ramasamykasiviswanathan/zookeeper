@@ -1,10 +1,11 @@
 # Use a lightweight JRE base image
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:8-jre
+
 
 ENV ZOO_HOME=/opt/zookeeper ZOO_DATA_DIR=/data ZOO_LOG_DIR=/logs PATH=$PATH:/opt/zookeeper/bin
 
 # Install bash required by entrypoint and zkServer.sh
-RUN apk add --no-cache bash
+RUN apt-get update && apt-get install -y bash && rm -rf /var/lib/apt/lists/*
 
 WORKDIR $ZOO_HOME
 

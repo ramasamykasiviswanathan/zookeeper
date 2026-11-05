@@ -39,6 +39,7 @@ import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 import org.slf4j.Logger;
 
+@SuppressWarnings({"deprecation", "removal"})
 public final class SecurityUtils {
 
     public static final String QUORUM_HOSTNAME_PATTERN = "_HOST";

@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
  * This class manages SASL authentication for the client. It
  * allows ClientCnxn to authenticate using SASL with a ZooKeeper server.
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class ZooKeeperSaslClient {
 
     /**
@@ -317,6 +318,7 @@ public class ZooKeeperSaslClient {
         if (subject != null) {
             synchronized (login) {
                 try {
+                    @SuppressWarnings("deprecation")
                     final byte[] retval = Subject.doAs(subject, new PrivilegedExceptionAction<byte[]>() {
                         public byte[] run() throws SaslException {
                             LOG.debug("saslClient.evaluateChallenge(len={})", saslToken.length);

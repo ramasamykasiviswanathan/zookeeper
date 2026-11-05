@@ -77,19 +77,22 @@ public final class DelayInjector {
     }
 
     public static void inject(String stage, String spec, Request request) {
-        if (OPCODE_DELAYS.isEmpty()) {
-            return;
-        }
         if (request == null) {
             // Stage-only injection without request context – skip
             return;
         }
-        DelaySpec ds = OPCODE_DELAYS.get(request.type);
+        String opcode = Request.op2String(request.type);
+        int opcodeNum = request.type;
+        // Always log stage passage for research comparison
+        long cpuCycles = Request.getInstructionCount();
+        DelaySpec ds = OPCODE_DELAYS.get(opcodeNum);
         if (ds == null) {
+            // Normal processing without delay injection
+            LOG.info("ZK_OPCODE_LOG [{}][opcode={}][opcodeNum={}] NO_DELAY cpuCycles={}", stage, opcode, opcodeNum, cpuCycles);
             return;
         }
-        String opcode = Request.op2String(request.type);
-        injectInternal(stage, opcode, request.type, ds.category, ds.durationMinutes);
+        // Delay configured – proceed with injection
+        injectInternal(stage, opcode, opcodeNum, ds.category, ds.durationMinutes);
     }
 
     public static void inject(String stage, String spec, String opcode) {
@@ -114,7 +117,9 @@ public final class DelayInjector {
                 return;
         }
 
-        String logMsg = String.format("ZK_OPCODE_LOG [%s][opcode=%s][opcodeNum=%d] %s delay (%d) minutes", stage, opcode, opcodeNum, typeName, durationMinutes);
+        long cpuCyclesBefore = Request.getInstructionCount();
+
+        String logMsg = String.format("ZK_OPCODE_LOG [%s][opcode=%s][opcodeNum=%d] %s delay (%d) minutes cpuCycles=%d", stage, opcode, opcodeNum, typeName, durationMinutes, cpuCyclesBefore);
         LOG.info(logMsg + " → starting");
         try {
             switch (category) {

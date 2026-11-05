@@ -43,6 +43,7 @@ import org.apache.zookeeper.util.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"deprecation", "removal"})
 public class SaslQuorumAuthLearner implements QuorumAuthLearner {
 
     private static final Logger LOG = LoggerFactory.getLogger(SaslQuorumAuthLearner.class);

@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.zookeeper.server;
 
 import java.io.IOException;
@@ -46,9 +45,11 @@ import org.slf4j.LoggerFactory;
  * onto the request as it is processed.
  */
 public class Request {
+
     private static final java.lang.management.ThreadMXBean threadBean = java.lang.management.ManagementFactory.getThreadMXBean();
     // CHANGED: Use AtomicInteger for safe visibility when the Request hops between threads
     private final java.util.concurrent.atomic.AtomicInteger dagSequenceId = new java.util.concurrent.atomic.AtomicInteger(0);
+
     static {
         if (threadBean.isThreadCpuTimeSupported()) {
             threadBean.setThreadCpuTimeEnabled(true);
@@ -115,9 +116,9 @@ public class Request {
     }
 
     /**
-     * Capture the call stack at the entry point of {@link #logOpCodeDetails(String)}
-     * so the caller lookup is robust against JIT inlining and any number of
-     * helper methods.
+     * Capture the call stack at the entry point of
+     * {@link #logOpCodeDetails(String)} so the caller lookup is robust against
+     * JIT inlining and any number of helper methods.
      *
      * Frame layout for a call like
      * {@code ExternalClass.foo() -> Request.logOpCodeDetails("BEFORE")}:
@@ -132,9 +133,9 @@ public class Request {
     }
 
     /**
-     * Find the first stack frame that is NOT inside {@link Request}
-     * (and not in JVM-internal packages). This identifies the real
-     * caller of {@link #logOpCodeDetails(String)}.
+     * Find the first stack frame that is NOT inside {@link Request} (and not in
+     * JVM-internal packages). This identifies the real caller of
+     * {@link #logOpCodeDetails(String)}.
      */
     private static StackTraceElement getCallerStackTraceElement(StackTraceElement[] stackTrace) {
         if (stackTrace == null) {
@@ -145,9 +146,9 @@ public class Request {
             StackTraceElement el = stackTrace[i];
             String cls = el.getClassName();
             if (cls.startsWith("java.")
-                || cls.startsWith("sun.")
-                || cls.startsWith("jdk.")
-                || requestClassName.equals(cls)) {
+                    || cls.startsWith("sun.")
+                    || cls.startsWith("jdk.")
+                    || requestClassName.equals(cls)) {
                 continue;
             }
             return el;
@@ -157,6 +158,7 @@ public class Request {
 
     /**
      * Get formatted caller info: class.method(file:line).
+     *
      * @param stackTrace stack captured at entry to logOpCodeDetails, or null
      */
     private static String getCallerInfo(StackTraceElement[] stackTrace) {
@@ -175,8 +177,10 @@ public class Request {
 
     /**
      * Log OpCode details for ALL opcodes with ID chaining and duration tracking
+     *
      * @param phase Either "BEFORE" or "AFTER" to indicate processing phase
      */
+    @SuppressWarnings("deprecation")
     public void logOpCodeDetails(String phase) {
         // Capture stack at the entry of the public method so the caller
         // lookup below is robust against any number of helper methods
@@ -215,11 +219,11 @@ public class Request {
     // --- NEW DAG LOGGING METHODS ---
     public long logDagMethodStart(String processorName) {
         // Safely increment and get across thread boundaries
-        int currentSeq = dagSequenceId.incrementAndGet(); 
+        int currentSeq = dagSequenceId.incrementAndGet();
         long startCpuTime = getInstructionCount();
         // Convert the integer opcode (this.type) to a readable string
-        String opName = Request.op2String(this.type); 
-        
+        String opName = Request.op2String(this.type);
+
         LOG.info("ZK_OPCODE_LOG | Session: {}/0x{} | CXID: {} | ZXID: {}/0x{} | Seq: {} | Processor: {} | OpCode: {} | Status: START",
                 sessionId, Long.toHexString(sessionId), cxid, zxid, Long.toHexString(zxid), currentSeq, processorName, opName);
         return startCpuTime;
@@ -228,9 +232,9 @@ public class Request {
     public void logDagMethodEnd(String processorName, long startCpuTime) {
         long endCpuTime = getInstructionCount();
         long instructionCostDelta = endCpuTime - startCpuTime;
-        
-        int currentSeq = dagSequenceId.get(); 
-        String opName = Request.op2String(this.type); 
+
+        int currentSeq = dagSequenceId.get();
+        String opName = Request.op2String(this.type);
 
         LOG.info("ZK_OPCODE_LOG | Session: {}/0x{} | CXID: {} | ZXID: {}/0x{} | Seq: {} | Processor: {} | OpCode: {} | Status: END | CostDeltaNs: {}", sessionId, Long.toHexString(sessionId), cxid, zxid, Long.toHexString(zxid), currentSeq, processorName, opName, instructionCostDelta);
     }
@@ -359,11 +363,11 @@ public class Request {
     private boolean isThrottledFlag = false;
 
     public boolean isThrottled() {
-      return isThrottledFlag;
+        return isThrottledFlag;
     }
 
     public void setIsThrottled(boolean val) {
-      isThrottledFlag = val;
+        isThrottledFlag = val;
     }
 
     public boolean isThrottlable() {
@@ -480,9 +484,8 @@ public class Request {
     }
 
     /**
-     * A prior request was dropped on this request's connection and
-     * therefore this request must also be dropped to ensure correct
-     * ordering semantics.
+     * A prior request was dropped on this request's connection and therefore
+     * this request must also be dropped to ensure correct ordering semantics.
      */
     public boolean mustDrop() {
         return ((cnxn != null) && cnxn.isInvalid());
@@ -491,80 +494,79 @@ public class Request {
     /**
      * is the packet type a valid packet in zookeeper
      *
-     * @param type
-     *                the type of the packet
+     * @param type the type of the packet
      * @return true if a valid packet, false if not
      */
     static boolean isValid(int type) {
         // make sure this is always synchronized with Zoodefs!!
         switch (type) {
-        case OpCode.notification:
-        case OpCode.check:
-            return false;
-        case OpCode.closeSession:
-        case OpCode.create:
-        case OpCode.create2:
-        case OpCode.createTTL:
-        case OpCode.createContainer:
-        case OpCode.createSession:
-        case OpCode.delete:
-        case OpCode.deleteContainer:
-        case OpCode.exists:
-        case OpCode.getACL:
-        case OpCode.getChildren:
-        case OpCode.getAllChildrenNumber:
-        case OpCode.getChildren2:
-        case OpCode.getData:
-        case OpCode.getEphemerals:
-        case OpCode.multi:
-        case OpCode.multiRead:
-        case OpCode.ping:
-        case OpCode.reconfig:
-        case OpCode.setACL:
-        case OpCode.setData:
-        case OpCode.setWatches:
-        case OpCode.setWatches2:
-        case OpCode.sync:
-        case OpCode.checkWatches:
-        case OpCode.removeWatches:
-        case OpCode.addWatch:
-        case OpCode.whoAmI:
-            return true;
-        default:
-            return false;
+            case OpCode.notification:
+            case OpCode.check:
+                return false;
+            case OpCode.closeSession:
+            case OpCode.create:
+            case OpCode.create2:
+            case OpCode.createTTL:
+            case OpCode.createContainer:
+            case OpCode.createSession:
+            case OpCode.delete:
+            case OpCode.deleteContainer:
+            case OpCode.exists:
+            case OpCode.getACL:
+            case OpCode.getChildren:
+            case OpCode.getAllChildrenNumber:
+            case OpCode.getChildren2:
+            case OpCode.getData:
+            case OpCode.getEphemerals:
+            case OpCode.multi:
+            case OpCode.multiRead:
+            case OpCode.ping:
+            case OpCode.reconfig:
+            case OpCode.setACL:
+            case OpCode.setData:
+            case OpCode.setWatches:
+            case OpCode.setWatches2:
+            case OpCode.sync:
+            case OpCode.checkWatches:
+            case OpCode.removeWatches:
+            case OpCode.addWatch:
+            case OpCode.whoAmI:
+                return true;
+            default:
+                return false;
         }
     }
 
     public boolean isQuorum() {
         switch (this.type) {
-        case OpCode.exists:
-        case OpCode.getACL:
-        case OpCode.getChildren:
-        case OpCode.getAllChildrenNumber:
-        case OpCode.getChildren2:
-        case OpCode.getData:
-        case OpCode.getEphemerals:
-        case OpCode.multiRead:
-        case OpCode.whoAmI:
-            return false;
-        case OpCode.create:
-        case OpCode.create2:
-        case OpCode.createTTL:
-        case OpCode.createContainer:
-        case OpCode.error:
-        case OpCode.delete:
-        case OpCode.deleteContainer:
-        case OpCode.setACL:
-        case OpCode.setData:
-        case OpCode.check:
-        case OpCode.multi:
-        case OpCode.reconfig:
-            return true;
-        case OpCode.closeSession:
-        case OpCode.createSession:
-            return !this.isLocalSession;
-        default:
-            return false;
+            case OpCode.exists:
+            case OpCode.getACL:
+            case OpCode.getChildren:
+            case OpCode.getAllChildrenNumber:
+            case OpCode.getChildren2:
+            case OpCode.getData:
+            case OpCode.getEphemerals:
+            case OpCode.multiRead:
+            case OpCode.whoAmI:
+                return false;
+            case OpCode.create:
+            case OpCode.create2:
+            case OpCode.createTTL:
+            case OpCode.createContainer:
+            case OpCode.error:
+            case OpCode.delete:
+            case OpCode.deleteContainer:
+            case OpCode.setACL:
+            case OpCode.setData:
+            case OpCode.check:
+            case OpCode.multi:
+            case OpCode.reconfig:
+                return true;
+            case OpCode.closeSession:
+            case OpCode.createSession:
+                return !this.isLocalSession;
+            default:
+                return false;
         }
     }
 
@@ -645,18 +647,18 @@ public class Request {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("sessionid:0x").append(Long.toHexString(sessionId))
-          .append(" type:").append(op2String(type))
-          .append(" cxid:0x").append(Long.toHexString(cxid))
-          .append(" zxid:0x").append(Long.toHexString(hdr == null ? -2 : hdr.getZxid()))
-          .append(" txntype:").append(hdr == null ? "unknown" : "" + hdr.getType());
+                .append(" type:").append(op2String(type))
+                .append(" cxid:0x").append(Long.toHexString(cxid))
+                .append(" zxid:0x").append(Long.toHexString(hdr == null ? -2 : hdr.getZxid()))
+                .append(" txntype:").append(hdr == null ? "unknown" : "" + hdr.getType());
 
         // best effort to print the path assoc with this request
         String path = "n/a";
         if (type != OpCode.createSession
-            && type != OpCode.setWatches
-            && type != OpCode.setWatches2
-            && type != OpCode.closeSession
-            && request != null) {
+                && type != OpCode.setWatches
+                && type != OpCode.setWatches2
+                && type != OpCode.closeSession
+                && request != null) {
             try {
                 // make sure we don't mess with request itself
                 byte[] bytes = request.readBytes();
@@ -722,17 +724,16 @@ public class Request {
     }
 
     /**
-     * Returns a formatted, comma-separated list of the user IDs
-     * associated with this {@code Request}, or {@code null} if no
-     * user IDs were found.
+     * Returns a formatted, comma-separated list of the user IDs associated with
+     * this {@code Request}, or {@code null} if no user IDs were found.
      *
-     * The return value is used for audit logging.  While it may be
-     * easy on the eyes, it is underspecified: it does not mention the
-     * corresponding {@code scheme}, nor are its components escaped.
-     * This is not a security feature.
+     * The return value is used for audit logging. While it may be easy on the
+     * eyes, it is underspecified: it does not mention the corresponding
+     * {@code scheme}, nor are its components escaped. This is not a security
+     * feature.
      *
-     * @return a comma-separated list of user IDs, or {@code null} if
-     * no user IDs were found.
+     * @return a comma-separated list of user IDs, or {@code null} if no user
+     * IDs were found.
      */
     public String getUsersForAudit() {
         return AuthUtil.getUsers(authInfo);
@@ -752,9 +753,23 @@ public class Request {
 
     /**
      * Get CPU instruction/time count using ThreadMXBean (actual CPU time in ns)
+     * Falls back to System.nanoTime() if thread CPU time is not supported
      */
     public static long getInstructionCount() {
         // java.lang.management.ThreadMXBean bean = java.lang.management.ManagementFactory.getThreadMXBean();
-        return threadBean.isCurrentThreadCpuTimeSupported() ? threadBean.getCurrentThreadCpuTime() : -1;
+        if (threadBean.isCurrentThreadCpuTimeSupported()) {
+            return threadBean.getCurrentThreadCpuTime();
+        } else if (threadBean.isThreadCpuTimeSupported()) {
+            // Try to enable thread CPU time if not already enabled
+            try {
+                threadBean.setThreadCpuTimeEnabled(true);
+                if (threadBean.isCurrentThreadCpuTimeSupported()) {
+                    return threadBean.getCurrentThreadCpuTime();
+                }
+            } catch (Exception e) {
+                // Ignore and fall back
+            }
+        }
+        return -1;
     }
 }

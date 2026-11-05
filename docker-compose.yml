@@ -13,7 +13,7 @@ services:
     environment:
       ZOO_MY_ID: 1
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:0,5:2:0,8:1:0"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
     volumes:
       - zoo1_data:/data
       - zoo1_datalog:/logs
@@ -30,7 +30,7 @@ services:
     environment:
       ZOO_MY_ID: 2
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:0,5:2:0,8:1:0"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
     volumes:
       - zoo2_data:/data
       - zoo2_datalog:/logs
@@ -47,7 +47,7 @@ services:
     environment:
       ZOO_MY_ID: 3
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:0,5:2:0,8:1:0"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
     volumes:
       - zoo3_data:/data
       - zoo3_datalog:/logs
@@ -64,7 +64,7 @@ services:
     environment:
       ZOO_MY_ID: 4
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:0,5:2:0,8:1:0"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
     volumes:
       - zoo4_data:/data
       - zoo4_datalog:/logs
@@ -81,7 +81,7 @@ services:
     environment:
       ZOO_MY_ID: 5
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dzookeeper.test.delayPerOpcode=4:1:0,5:2:0,8:1:0"
+      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
     volumes:
       - zoo5_data:/data
       - zoo5_datalog:/logs
