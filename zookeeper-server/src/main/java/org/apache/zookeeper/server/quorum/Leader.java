@@ -1048,9 +1048,14 @@ public class Leader extends LearnerMaster {
      */
     @Override
     public synchronized void processAck(long sid, long zxid, SocketAddress followerAddr) {
-        DelayInjector.inject("ACK_PROC", System.getProperty("zookeeper.test.delayStages", ""));
-        // 1. Look up the proposal to get the original Request object
+        // 1. Look up the proposal to get the original Request object (needed before the
+        //    injection so ACK_PROC can log/inject per-request opcode details instead of
+        //    being a no-op via the 2-arg inject path).
         Proposal proposal = outstandingProposals.get(zxid);
+        DelayInjector.inject(
+                "ACK_PROC",
+                System.getProperty("zookeeper.test.delayStages", ""),
+                proposal == null ? null : proposal.request);
         long startCpuTime = 0;
 
         if (proposal != null && proposal.request != null) {

@@ -8,9 +8,11 @@ fi
 
 # Write zoo.cfg configuration file
 cat <<EOF > "$ZOO_HOME/conf/zoo.cfg"
-tickTime=2000
+tickTime=10000
 initLimit=10
 syncLimit=5
+minSessionTimeout=20000
+maxSessionTimeout=600000
 dataDir=$ZOO_DATA_DIR
 dataLogDir=$ZOO_LOG_DIR
 clientPort=2181

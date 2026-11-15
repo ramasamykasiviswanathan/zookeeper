@@ -1,5 +1,16 @@
 version: "3.8"
 
+# Shared server JVM flags for every ZooKeeper member.
+#
+# `${VARIABLE-default}` uses the default only when VARIABLE is not set.
+# An explicitly empty value is preserved:
+#   unset/default                       -> no opcode delay (normal/baseline run)
+#   ZOO_DELAY_PER_OPCODE='4:1:2,...'    -> delay the listed opcodes
+#   ZOO_DELAY_STAGES='SERVER_RECV,...'  -> select effective request-aware stages
+#   ZOO_DELAY_STAGES=''                 -> no stage filter (all effective request-aware stages)
+x-zookeeper-environment: &zookeeper-environment
+  SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dzookeeper.test.delayPerOpcode=${ZOO_DELAY_PER_OPCODE-} -Dzookeeper.test.delayStages=${ZOO_DELAY_STAGES-} -Dzookeeper.request_stale_latency_check=false"
+
 services:
   zoo1:
     build:
@@ -11,12 +22,12 @@ services:
       - "2181:2181"
       - "5005:5005"
     environment:
+      <<: *zookeeper-environment
       ZOO_MY_ID: 1
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dzookeeper.test.delayPerOpcode=4:2:0,5:2:0,8:2:0"
     volumes:
       - zoo1_data:/data
-      - zoo1_datalog:/logs
+      - ./logs/zoo1:/logs
 
   zoo2:
     build:
@@ -28,12 +39,12 @@ services:
       - "2182:2181"
       - "5006:5005"
     environment:
+      <<: *zookeeper-environment
       ZOO_MY_ID: 2
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dzookeeper.test.delayPerOpcode=4:2:0,5:2:0,8:2:0"
     volumes:
       - zoo2_data:/data
-      - zoo2_datalog:/logs
+      - ./logs/zoo2:/logs
 
   zoo3:
     build:
@@ -45,12 +56,12 @@ services:
       - "2183:2181"
       - "5007:5005"
     environment:
+      <<: *zookeeper-environment
       ZOO_MY_ID: 3
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dzookeeper.test.delayPerOpcode=4:2:0,5:2:0,8:2:0"
     volumes:
       - zoo3_data:/data
-      - zoo3_datalog:/logs
+      - ./logs/zoo3:/logs
 
   zoo4:
     build:
@@ -62,12 +73,12 @@ services:
       - "2184:2181"
       - "5008:5005"
     environment:
+      <<: *zookeeper-environment
       ZOO_MY_ID: 4
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dzookeeper.test.delayPerOpcode=4:2:0,5:2:0,8:2:0"
     volumes:
       - zoo4_data:/data
-      - zoo4_datalog:/logs
+      - ./logs/zoo4:/logs
 
   zoo5:
     build:
@@ -79,21 +90,16 @@ services:
       - "2185:2181"
       - "5009:5005"
     environment:
+      <<: *zookeeper-environment
       ZOO_MY_ID: 5
       ZOO_SERVERS: "server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888 server.4=zoo4:2888:3888 server.5=zoo5:2888:3888"
-      SERVER_JVMFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dzookeeper.test.delayPerOpcode=4:2:0,5:2:0,8:2:0"
     volumes:
       - zoo5_data:/data
-      - zoo5_datalog:/logs
+      - ./logs/zoo5:/logs
 
 volumes:
   zoo1_data:
-  zoo1_datalog:
   zoo2_data:
-  zoo2_datalog:
   zoo3_data:
-  zoo3_datalog:
   zoo4_data:
-  zoo4_datalog:
   zoo5_data:
-  zoo5_datalog:
